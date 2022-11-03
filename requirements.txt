@@ -1,0 +1,2 @@
+# The version of SDK we are using needs old protobuf. If they recompile their messages this can be bumped
+protobuf <= 3.20.1
