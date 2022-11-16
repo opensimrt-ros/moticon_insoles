@@ -7,13 +7,32 @@ from std_msgs.msg import Header
 from opensimrt_msgs.msg import Common 
 from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped
 from colorama import Fore
+from sensor_msgs.msg import Imu
+from math import pi
 
+GRAVITY = 9.80665
 class InsolePublishers():
     def __init__(self):
         self.pressure = ["",""]
         self.force = ["",""]
         self.cop = ["",""]
         self.wrench = ["",""]
+        self.imu = ["",""]
+
+def convert_to_imu(h, angular_velocity,linear_acceleration):
+    imu_msg = Imu()   
+    imu_msg.header = h
+    #the sensor for this insole is the LSM6DSL so in g and degrees/second
+    if len(angular_velocity) >=2:
+        imu_msg.angular_velocity.x = angular_velocity[0]/180.0*pi
+        imu_msg.angular_velocity.y = angular_velocity[1]/180.0*pi
+        imu_msg.angular_velocity.z = angular_velocity[2]/180.0*pi
+    if len(linear_acceleration) >=2:
+        imu_msg.linear_acceleration.x = linear_acceleration[0]/GRAVITY
+        imu_msg.linear_acceleration.y = linear_acceleration[1]/GRAVITY
+        imu_msg.linear_acceleration.z = linear_acceleration[2]/GRAVITY
+
+    return imu_msg
 
 def run_server(server_name = "", port = 9999):
     # Create a TCP/IP socket
@@ -27,13 +46,15 @@ def run_server(server_name = "", port = 9999):
     # Create ros stuff
     rospy.init_node("moticon_insoles", anonymous=True)
     ips = InsolePublishers()
-
+    
+    l_frame = rospy.get_param("~left_cop_reference_frame")
+    r_frame = rospy.get_param("~right_cop_reference_frame")
     for i,side in enumerate(["left","right"]):
-        ips.pressure[i] = rospy.Publisher(side+'_pressure', Common, queue_size=1)
-        ips.force[i] = rospy.Publisher(side+'_force', Common, queue_size=1)
-        ips.cop[i] = rospy.Publisher(side+'_cop', Common, queue_size=1) ## here I probably want a geometry Point or a Point[]
-        ips.wrench[i] = rospy.Publisher(side+'_wrench', WrenchStamped, queue_size=1) ## here I probably want a geometry Point or a Point[]
-
+        ips.pressure[i] = rospy.Publisher(side+'/pressure', Common, queue_size=1)
+        ips.force[i] = rospy.Publisher(side+'/force', Common, queue_size=1)
+        ips.cop[i] = rospy.Publisher(side+'/cop', Common, queue_size=1) ## here I probably want a geometry Point or a Point[]
+        ips.wrench[i] = rospy.Publisher(side+'/wrench', WrenchStamped, queue_size=1)
+        ips.imu[i] = rospy.Publisher(side+'/imu_raw', Imu, queue_size=1)
     broadcaster = tf2_ros.TransformBroadcaster()
 
     
@@ -64,7 +85,7 @@ def run_server(server_name = "", port = 9999):
                 #rospy.logdebug(color+dir(msg.data_message))
                 rospy.logdebug(color+str(msg.data_message.pressure))
                 rospy.logdebug(color+str(msg.data_message.total_force)) ## to display in Rviz we need to use a WrenchStamped
-                rospy.loginfo(color+str(msg.data_message.cop)) ## maybe this is a geometry/Point
+                rospy.logdebug(color+str(msg.data_message.cop)) ## maybe this is a geometry/Point
 
                 ### this will be relevant for the sensors/imu raw publisher. we also need to make sure it is using SI and they are the same as ROS's definitions
                 ## I will also need this if we have an inclined plane!!!
@@ -92,15 +113,20 @@ def run_server(server_name = "", port = 9999):
                 if msg.data_message.side: ## or the other way around, needs checking
                     h.frame_id = "right"
                     t.child_frame_id = "right"
-                    offset = 0.3
+                    offset = -0.3
+                    x_axis_direction = 1
+                    t.header.frame_id = r_frame
                 else:
                     h.frame_id = "left"
                     t.child_frame_id = "left"
-                    offset = -0.3
+                    x_axis_direction = -1
+                    offset = 0.3
+                    t.header.frame_id = l_frame
                 
                 pmsg = Common(h, msg.data_message.pressure)
                 fmsg = Common(h, msg.data_message.total_force)
                 cmsg = Common(h, msg.data_message.cop)
+                imsg = convert_to_imu(h, msg.data_message.angular, msg.data_message.acceleration)
 
                 force = Vector3(y=msg.data_message.total_force)
                 wren = Wrench(force=force) #force, torque
@@ -110,13 +136,13 @@ def run_server(server_name = "", port = 9999):
                 ips.force[side].publish(fmsg)
                 ips.cop[side].publish(cmsg)
                 ips.wrench[side].publish(wmsg)
+                ips.imu[side].publish(imsg)
                 ## we also want to send a tf for the cop
 
-                t.header.frame_id = "map" # TODO: should be a param
                 if len(msg.data_message.cop)>0:
                     t.header.stamp = time_stamp
-                    t.transform.translation.x = msg.data_message.cop [1] + offset### need to check these because I am rotating them with the static transform afterwards...
-                    t.transform.translation.y = msg.data_message.cop [0]
+                    t.transform.translation.x = msg.data_message.cop [1]/5*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
+                    t.transform.translation.y = msg.data_message.cop [0]/5 + 0.1 
                     t.transform.translation.z = 0
                     t.transform.rotation.x = 0
                     t.transform.rotation.y = 0.707
