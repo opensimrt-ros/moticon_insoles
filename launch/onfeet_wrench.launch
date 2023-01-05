@@ -2,12 +2,14 @@
 <launch>
 
 	<arg name="name" 		default="openGo" />
-	<arg name="freq" default="25" />
+	<arg name="insole_freq" default="100" />
+	<arg name="static_pub_freq" default="25" />
 
         <node pkg="moticon_insoles" type="sdk_read.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
-		<param name="left_cop_reference_frame" 			value="human/calcn_l" />
-		<param name="right_cop_reference_frame" 		value="human/calcn_r" />
+		<param name="insole_rate" 		value="$(arg insole_freq)" />
+		<param name="left_cop_reference_frame" 			value="calcn_l" />
+		<param name="right_cop_reference_frame" 		value="calcn_r" />
         </node>
 	
 	<node pkg="imu_complementary_filter" type="complementary_filter_node"
@@ -33,8 +35,8 @@
 
 	</node>
 
-<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 map left $(arg freq)" /-->
-<!--node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 map right $(arg freq)" /-->
+<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 map left $(arg static_pub_freq)" /-->
+<!--node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 map right $(arg static_pub_freq)" /-->
 
 <!-- left_foot right_foot  -->
 

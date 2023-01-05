@@ -63,14 +63,9 @@ def run_server(server_name = "", port = 9999):
         ips.wrench[i] = rospy.Publisher(side+'/wrench', WrenchStamped, queue_size=1)
         ips.imu[i] = rospy.Publisher(side+'/imu_raw', Imu, queue_size=1)
     broadcaster = tf2_ros.TransformBroadcaster()
+
     
-    execution_timer = rospy.Publisher("/insoles", Float32, queue_size=1)
-    
-    insole_rate = rospy.get_param("~insole_rate")
-    node_freq = 2*insole_rate
-    rospy.loginfo(f"Insole rate read freq set to {insole_rate}")
-    rospy.loginfo(f"Node freq will be set to {node_freq}")
-    rate = rospy.Rate(node_freq) ## if we read at 100 hertz from 2 sensors this should be enough?
+    rate = rospy.Rate(1000) ## if we read at 100 hertz from 2 sensors this should be enough?
     initialized = False
     initial_time = None
     last_time = [None,None] ## left and right have different counters!
@@ -91,6 +86,33 @@ def run_server(server_name = "", port = 9999):
                     break
 
                 msg.ParseFromString(msg_buf)
+                if not initialized:
+                    initial_time = msg.data_message.time
+                    initialized = True
+
+                # Now handle the message
+                color = ""
+                if msg.data_message.side:
+                    color =Fore.CYAN # RIGHT SIDE ## consider adding for debug
+                else:
+                    color =Fore.LIGHTCYAN_EX
+                rospy.logdebug(color+str(msg)) ## consider adding for debug
+
+                rospy.logdebug(color+str(msg.data_message))
+                rospy.logdebug(color+str(msg.data_message.pressure))
+                rospy.logdebug(color+str(msg.data_message.total_force)) ## to display in Rviz we need to use a WrenchStamped
+                rospy.logdebug(color+str(msg.data_message.cop)) ## maybe this is a geometry/Point
+
+                ### this will be relevant for the sensors/imu raw publisher. we also need to make sure it is using SI and they are the same as ROS's definitions
+                ## I will also need this if we have an inclined plane!!!
+                rospy.logdebug(color+str(msg.data_message.angular))
+                rospy.logdebug(color+str(msg.data_message.acceleration))
+
+                rospy.logdebug(color+str(msg.data_message.time)) ## not sure if I need this guy
+                #rospy.logdebug(color+str(msg.data_message.temperature) ## in our device this is always zero
+                rospy.logdebug(color+str(msg.data_message.service_id)) ## not sure what this is either
+                rospy.logdebug(color+str(msg.data_message.side))
+
 
                 
                 # Publish these guys
@@ -123,8 +145,7 @@ def run_server(server_name = "", port = 9999):
                 force = 0
                 cop = (0,0)
                 if not msg.data_message.time:
-                    #rospy.logwarn("no time in message!")
-                    pass
+                    rospy.logwarn("no time in message!")
                 else:
                     thistime[side] = msg.data_message.time
                     if thistime[side] and last_time[side]:
@@ -135,8 +156,7 @@ def run_server(server_name = "", port = 9999):
                     last_time = deepcopy(thistime)
 
                 if not msg.data_message.total_force:
-                    pass
-                    #rospy.logwarn("no total_force. not publishing force or wrench topics")
+                    rospy.logwarn("no total_force. not publishing force or wrench topics")
                 else:
                     fmsg = Float32(msg.data_message.total_force)
                     try:
@@ -153,8 +173,7 @@ def run_server(server_name = "", port = 9999):
                 
 
                 if not msg.data_message.cop:
-                    pass
-                    #rospy.logwarn_once("no cop. not publishing ...")
+                    rospy.logwarn_once("no cop. not publishing ...")
                 else:
                     cmsg = Common(h, msg.data_message.cop)
                     ips.cop[side].publish(cmsg)
@@ -169,24 +188,21 @@ def run_server(server_name = "", port = 9999):
                     broadcaster.sendTransform(t)
 
                 if not msg.data_message.pressure:
-                    pass
-                    #rospy.logwarn_once("no pressure data. not publishing")
+                    rospy.logwarn_once("no pressure data. not publishing")
                 else:
                     pmsg = Common(h, msg.data_message.pressure)
                     ips.pressure[side].publish(pmsg)
 
                 if not msg.data_message.angular or not msg.data_message.acceleration:
-                    pass
-                    #rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
+                    rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
                 else:
                     imsg = convert_to_imu(h, msg.data_message.angular, msg.data_message.acceleration)
                     ips.imu[side].publish(imsg)
 
-                rate.sleep()
+                #rate.sleep()
                 toc = time.perf_counter()
-                execution_timer.publish((toc-tic)*1000)
                 #rospy.loginfo(f"time it took to run over loop once {(toc - tic)*1000:0.4f} ms")
-            raise rospy.ROSInterruptException("This is fine. It's the way to close this otherwise it will run forever.")
+            raise rospy.ROSInterruptException()
         finally:
             connection.close()
 
