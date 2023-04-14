@@ -15,6 +15,8 @@ from sensor_msgs.msg import Imu
 from math import pi
 from copy import deepcopy
 import numpy as np
+import abc
+from abc import ABC, abstractmethod
 
 GRAVITY = 9.80665
 
@@ -36,11 +38,11 @@ def convert_to_imu(h, angular_velocity,linear_acceleration):
     imu_msg = Imu()   
     imu_msg.header = h
     #the sensor for this insole is the LSM6DSL so in g and degrees/second
-    if len(angular_velocity) >=2:
+    if len(angular_velocity) == 3:
         imu_msg.angular_velocity.x = angular_velocity[0]/180.0*pi
         imu_msg.angular_velocity.y = angular_velocity[1]/180.0*pi
         imu_msg.angular_velocity.z = angular_velocity[2]/180.0*pi
-    if len(linear_acceleration) >=2:
+    if len(linear_acceleration) == 3:
         imu_msg.linear_acceleration.x = linear_acceleration[0]/GRAVITY
         imu_msg.linear_acceleration.y = linear_acceleration[1]/GRAVITY
         imu_msg.linear_acceleration.z = linear_acceleration[2]/GRAVITY
@@ -49,41 +51,41 @@ def convert_to_imu(h, angular_velocity,linear_acceleration):
 
 def extract_insole_data(msg_insole):
     """Extract only the pressure and acc info from the large streaming data"""
-    
+
     saving_data = [msg_insole.data_message.time, msg_insole.data_message.side,\
-                   *msg_insole.data_message.pressure,\
-                   *np.around(msg_insole.data_message.acceleration, decimals=3),\
-                   *np.around(msg_insole.data_message.angular, decimals=3),\
-                   msg_insole.data_message.total_force,\
-                   *np.around(msg_insole.data_message.cop, decimals=5)]
-        
+            *msg_insole.data_message.pressure,\
+            *np.around(msg_insole.data_message.acceleration, decimals=3),\
+            *np.around(msg_insole.data_message.angular, decimals=3),\
+            msg_insole.data_message.total_force,\
+            *np.around(msg_insole.data_message.cop, decimals=5)]
+
     return saving_data
-    
+
 
 def insole_data_save(file_name, data):
     """save the insole data into a text file"""
-    
+
     # create path if not exist
     directory = os.path.dirname(file_name)
     Path(directory).mkdir(parents=True, exist_ok=True)
-    
+
     insole_file = open(file_name, 'w')  # open file for writing
-    
+
     # save data into text file
     # write header
     header_str = ['Frame', 'side', 'P1', 'P2', 'P3',\
-              'P4', 'P5', 'P6', 'P7',\
-              'P8', 'P9', 'P10', 'P11',\
-              'P12', 'P13', 'P14', 'P15',\
-              'P16', 'acc1', 'acc2', 'acc3', 'ang1', 'ang2', 'ang3',\
-              'totalForce', 'cop1', 'cop2']
-           
+            'P4', 'P5', 'P6', 'P7',\
+            'P8', 'P9', 'P10', 'P11',\
+            'P12', 'P13', 'P14', 'P15',\
+            'P16', 'acc1', 'acc2', 'acc3', 'ang1', 'ang2', 'ang3',\
+            'totalForce', 'cop1', 'cop2']
+
     try:
         for header_name in header_str:  # write header
             insole_file.write(header_name)
             insole_file.write(' ')
         insole_file.write('\n')
-        
+
         c = len(data[0])  # get col number
         for row in data:  # write data
             for col in range(0, c):
@@ -93,16 +95,130 @@ def insole_data_save(file_name, data):
                 except:
                     pass
             insole_file.write('\n')
-             
+
     finally:
         insole_file.close()
 
+class InsoleDataGetter(ABC):
+    @abc.abstractproperty
+    def ok():
+        pass
+    @abstractmethod
+    def start_listening(self):
+        pass
+    @abstractmethod
+    def get_data(self):
+        pass
+    @abstractmethod
+    def __del__(self):
+        pass
+
+class InsoleDataFromSocket(InsoleDataGetter):
+    def __init__(self, server_name = "", port = 9999):
+        # Create a TCP/IP socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server_address = (server_name, port)
+        rospy.loginfo('Starting Moticon Insole server up on {} port {}'.format(server_name, port))
+        self.sock.bind(server_address)
+        self.sock.listen(1)
+        self.connection = None
+        self.connection_ok = True
+    
+    @property
+    def ok(self):
+        #print("called ok")
+        return self.connection_ok
+
+    def start_listening(self):
+        rospy.loginfo('Waiting for a connection...')
+        self.connection, client_address = self.sock.accept()
+        rospy.loginfo('Connection created.')
+        rospy.logdebug('client connected: {}'.format(client_address))
+
+    def get_data(self):
+        msg = moticon_insoles.proto_s.MoticonMessage() ## maybe this can be outside the loop
+        try:
+            msg_buf = moticon_insoles.get_message(self.connection)
+        except moticon_insoles.ConnectionClosed as e:
+            rospy.logerr(e)
+            self.connection_ok = False
+            print("Connection Closed. ")
+            return 
+
+        msg.ParseFromString(msg_buf) # TODO: not sure this erases everything that was already inside moticon_insoles.proto_s.MoticonMessage() need to measure speed gains to see if this makes sense
+        side = msg.data_message.side
+        msg_time = msg.data_message.time
+        msg_total_force = msg.data_message.total_force
+        msg_cop = msg.data_message.cop
+        msg_ang = msg.data_message.angular
+        msg_acc = msg.data_message.acceleration
+        msg_pres = msg.data_message.pressure
+        return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
+        
+    def __del__(self):
+        self.connection.close()
+
+class InsoleDataFromFile(InsoleDataGetter):
+    def __init__(self, filename = ""):
+        self.filename = filename
+        self.file = None
+        self.reader = None
+
+    def start_listening(self):
+        #maybe opens file and we have a getline thing going
+        print(self.filename)
+        self.file = open(self.filename, "r")
+        self.reader = csv.DictReader(self.file, delimiter=" ")
+        #print(next(self.reader))
+
+    @property
+    def ok(self):
+        #maybe checks if there is still things to be read.
+        if self.file:
+            return True
+        else:
+            return False
+
+    def get_data(self):
+        #print("gets from file, but not implemented yet")
+        #msg = moticon_insoles.proto_s.MoticonMessage()
+        frame_msg = next(self.reader)
+        print(frame_msg)
+        def get_prop(props):
+            for prop in props:
+                if not prop in frame_msg.keys():
+                    return None
+            if len(props) == 1:
+                return float(frame_msg[props[0]])
+            else:
+                return tuple([float(frame_msg.get(key)) for key in props])
+
+        msg_time            = get_prop(["Frame"])
+        if msg_time == 0: ## that weird message
+            return
+        side                = int(get_prop(["side"]))
+        msg_total_force     = get_prop(["totalForce"])
+        msg_cop             = get_prop(["cop1","cop2"])
+        msg_ang             = get_prop(["ang1","ang2","ang3"])   
+        msg_acc             = get_prop(["acc1","acc2","acc3"]) 
+        msg_pres            = get_prop(["P%d"%sensor for sensor in range(1,17)]) # P1...P16
+        return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
+
+    def __del__(self):
+        #closes file
+        self.file.close()
 
 class InsoleSrv:
-    def __init__(self):
+    def __init__(self, read_file = None):
         self.recording = False
         self.savedict_list = []
         self.file_name = "/tmp/insole.txt"
+        self.from_file = False
+        self.readfilename = ""
+        if read_file:
+            self.from_file = True
+            self.readfilename = read_file 
 
     def turn_on_recording(self, req):
         rospy.loginfo("Started recording")
@@ -130,21 +246,26 @@ class InsoleSrv:
         self.file_name = req.path + "/" + req.name + "_insole.txt"
         return SetFileNameSrvResponse()
 
-    def run_server(self, server_name = "", port = 9999):
-        # Create a TCP/IP socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        server_address = (server_name, port)
-        rospy.loginfo('Starting Moticon Insole server up on {} port {}'.format(server_name, port))
-        sock.bind(server_address)
-        sock.listen(1)
-        
+    def run_server(self, ):
+
         # Create ros stuff
         rospy.init_node("moticon_insoles", anonymous=True)
         ips = InsolePublishers()
         
-        l_frame = rospy.get_param("~left_cop_reference_frame")
-        r_frame = rospy.get_param("~right_cop_reference_frame")
+        gets_from_socket = rospy.get_param("gets_from_socket", default = True)
+       
+        #initializes InsoleDataGetter
+        #TODO: remove! this is for testing the thing
+        if self.from_file:
+            getter = InsoleDataFromFile(self.readfilename)
+
+        elif gets_from_socket:
+            getter = InsoleDataFromSocket()
+        else:
+            getter = InsoleDataFromFile(filename = rospy.get_param("filename", default="no_file!"))
+
+        l_frame = rospy.get_param("~left_cop_reference_frame", default="map")
+        r_frame = rospy.get_param("~right_cop_reference_frame", default="map")
         for i,side in enumerate(["left","right"]):
             ips.pressure[i] = rospy.Publisher(side+'/pressure', Common, queue_size=1)
             ips.force[i] = rospy.Publisher(side+'/force', Float32, queue_size=1)
@@ -153,10 +274,10 @@ class InsoleSrv:
             ips.wrench[i] = rospy.Publisher(side+'/wrench', WrenchStamped, queue_size=1)
             ips.imu[i] = rospy.Publisher(side+'/imu_raw', Imu, queue_size=1)
         broadcaster = tf2_ros.TransformBroadcaster()
-        
+
         execution_timer = rospy.Publisher("/insoles", Float32, queue_size=1)
-        
-        insole_rate = rospy.get_param("~insole_rate")
+
+        insole_rate = rospy.get_param("~insole_rate", default=100)
         node_freq = 2*insole_rate
         rospy.loginfo(f"Insole rate read freq set to {insole_rate}")
         rospy.loginfo(f"Node freq will be set to {node_freq}")
@@ -165,7 +286,7 @@ class InsoleSrv:
         initial_time = None
         last_time = [None,None] ## left and right have different counters!
         thistime = [None,None]
-     
+
 
         #recording service
         s = rospy.Service('~record', Empty, self.turn_on_recording)
@@ -173,23 +294,20 @@ class InsoleSrv:
         s2 = rospy.Service('~save', Empty, self.save)
         s3 = rospy.Service('~setfilename', SetFileNameSrv, self.setfilename)
         s4 = rospy.Service('~clear', Empty, self.clear)
-        msg = moticon_insoles.proto_s.MoticonMessage() ## maybe this can be outside the loop
         while not rospy.is_shutdown(): ## maybe while ros ok
-            rospy.loginfo('Waiting for a connection...')
-            connection, client_address = sock.accept()
-            rospy.loginfo('Connection created.')
-            rospy.logdebug('client connected: {}'.format(client_address))
+            getter.start_listening()
             try:
-                while not rospy.is_shutdown(): ## we maybe want to rate limit this.
+                while not rospy.is_shutdown() and getter.ok: ## we maybe want to rate limit this.
                     tic = time.perf_counter()
+                    
                     try:
-                        msg_buf = moticon_insoles.get_message(connection)
-                    except moticon_insoles.ConnectionClosed as e:
-                        rospy.logerr(e)
-                        break
-
-                    msg.ParseFromString(msg_buf) # TODO: not sure this erases everything that was already inside moticon_insoles.proto_s.MoticonMessage() need to measure speed gains to see if this makes sense
-
+                        msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = getter.get_data()
+                    except StopIteration:
+                        pass
+                    except Exception as e:
+                        print(e)
+                        print("something went wrong when getting data!")
+                        continue
                     #create dict we want to save later:
                     if self.recording:
                         #rospy.loginfo("REC\r")
@@ -199,23 +317,19 @@ class InsoleSrv:
                         except Exception as exc:
                             rospy.logerr("could not create savedict. data for this frame will not be saved.%s"%exc)
 
-
-
                     # Publish these guys
                     h = Header()
                     time_stamp = rospy.Time.now()
                     h.stamp = time_stamp
-                    
+
                     ## now I need to publish it to the right side. 
                     ## maybe this is wrong and I need to publish them both at the same time, but since I receive a message which is from either one side or the other, than the other side's info would be zero, so I didn't solve anything by doing this, I just pushed the problem further. At some point I need to remember which side is doing what. I can't rely on tf for this, so maybe I need to remember the latest values, update them here and publish both at the same time?
 
-                    side = msg.data_message.side
-                    
+
                     t = TransformStamped()
-                    if msg.data_message.side: ## or the other way around, needs checking
+                    if side: ## or the other way around, needs checking
                         h.frame_id = "right"
                         t.child_frame_id = "right"
-                        offset = -0.3
                         x_axis_direction = 1
                         t.header.frame_id = r_frame
 
@@ -223,18 +337,17 @@ class InsoleSrv:
                         h.frame_id = "left"
                         t.child_frame_id = "left"
                         x_axis_direction = -1
-                        offset = 0.3
                         t.header.frame_id = l_frame
-                    
-                    
+
+
                     pressure = 0
                     force = 0
                     cop = (0,0)
-                    if not msg.data_message.time:
+                    if not msg_time:
                         #rospy.logwarn("no time in message!")
                         pass
                     else:
-                        thistime[side] = msg.data_message.time
+                        thistime[side] = msg_time
                         if thistime[side] and last_time[side]:
                             timediff = thistime[side] - last_time[side]   
                             rospy.logdebug("time counter %d, time difference %d"%(thistime[side], timediff))
@@ -242,33 +355,33 @@ class InsoleSrv:
                             ips.time[side].publish(tmsg)
                         last_time = deepcopy(thistime)
 
-                    if not msg.data_message.total_force:
-                        pass
+                    if not msg_total_force:
                         #rospy.logwarn("no total_force. not publishing force or wrench topics")
+                        pass
                     else:
-                        fmsg = Float32(msg.data_message.total_force)
+                        fmsg = Float32(msg_total_force)
                         try:
                             ips.force[side].publish(fmsg)
                         except Exception as e:
-                            rospy.logerr("total force looks like this: %s and I can't publish it!! %s"%(msg.data_message.total_force, e))
-                        force = Vector3(y=msg.data_message.total_force)
+                            rospy.logerr("total force looks like this: %s and I can't publish it!! %s"%(msg_total_force, e))
+                        force = Vector3(y=msg_total_force)
                         wren = Wrench(force=force) #force, torque
                         wmsg = WrenchStamped(h,wren)
-                        
+
                         ips.wrench[side].publish(wmsg)
                     ## we also want to send a tf for the cop
 
-                    
 
-                    if not msg.data_message.cop:
-                        pass
+                    if not msg_cop:
                         #rospy.logwarn_once("no cop. not publishing ...")
+                        pass
                     else:
-                        cmsg = Common(h, msg.data_message.cop)
+                        #print("Issuign transforms")
+                        cmsg = Common(h, msg_cop)
                         ips.cop[side].publish(cmsg)
                         t.header.stamp = time_stamp
-                        t.transform.translation.x = msg.data_message.cop [1]/5*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
-                        t.transform.translation.y = msg.data_message.cop [0]/5 + 0.1 
+                        t.transform.translation.x = msg_cop[1]/5*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
+                        t.transform.translation.y = msg_cop[0]/5 + 0.1 
                         t.transform.translation.z = 0
                         t.transform.rotation.x = 0
                         t.transform.rotation.y = 0.707
@@ -276,29 +389,30 @@ class InsoleSrv:
                         t.transform.rotation.w = 0
                         broadcaster.sendTransform(t)
 
-                    if not msg.data_message.pressure:
-                        pass
+                    if not msg_press:
                         #rospy.logwarn_once("no pressure data. not publishing")
+                        pass
                     else:
-                        pmsg = Common(h, msg.data_message.pressure)
+                        pmsg = Common(h, msg_press)
                         ips.pressure[side].publish(pmsg)
 
-                    if not msg.data_message.angular or not msg.data_message.acceleration:
-                        pass
+                    if not msg_ang or not msg_acc:
                         #rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
+                        pass
                     else:
-                        imsg = convert_to_imu(h, msg.data_message.angular, msg.data_message.acceleration)
+                        imsg = convert_to_imu(h, msg_ang, msg_acc)
                         ips.imu[side].publish(imsg)
 
                     rate.sleep()
                     toc = time.perf_counter()
                     execution_timer.publish((toc-tic)*1000)
                     #rospy.loginfo(f"time it took to run over loop once {(toc - tic)*1000:0.4f} ms")
-                raise rospy.ROSInterruptException("This is fine. It's the way to close this otherwise it will run forever.")
+                #raise rospy.ROSInterruptException("This is fine. It's the way to close this otherwise it will run forever.")
+                break
             finally:
-                connection.close()
-
+                del getter
 #moticon_insoles.run_server()
-insrv = InsoleSrv()
+##TODO: only for testing. add appropriate params for this
+insrv = InsoleSrv("/catkin_ws/ew/ViconData/Ruoli/Motion_Insole/RealTimeIkIDS4/walking01_header_corrected.txt")
 insrv.run_server()
 
