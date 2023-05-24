@@ -3,7 +3,7 @@
 
 	<arg name="name" 		default="openGo" />
 
-        <node pkg="moticon_insoles" type="sdk_read.py" 	name="moticon_insoles" output="screen">
+        <node pkg="moticon_insoles" type="from_sdk.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="cop_reference_frame" 		value="map" />
         </node>

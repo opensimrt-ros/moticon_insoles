@@ -60,11 +60,11 @@ Visualization Manager:
       Enabled: true
       Force Arrow Scale: 0.0020000000949949026
       Force Color: 204; 51; 51
-      Hide Small Values: true
+      Hide Small Values: false
       History Length: 1
       Name: WrenchStamped
       Queue Size: 10
-      Topic: /left_wrench
+      Topic: /left/wrench
       Torque Arrow Scale: 2
       Torque Color: 204; 204; 51
       Unreliable: false
@@ -75,11 +75,11 @@ Visualization Manager:
       Enabled: true
       Force Arrow Scale: 0.0020000000949949026
       Force Color: 204; 51; 51
-      Hide Small Values: true
+      Hide Small Values: false
       History Length: 1
       Name: WrenchStamped
       Queue Size: 10
-      Topic: /right_wrench
+      Topic: /right/wrench
       Torque Arrow Scale: 2
       Torque Color: 204; 204; 51
       Unreliable: false
@@ -112,7 +112,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10
+      Distance: 9.520727157592773
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

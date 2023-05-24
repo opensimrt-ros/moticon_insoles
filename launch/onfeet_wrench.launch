@@ -5,7 +5,7 @@
 	<arg name="insole_freq" default="100" />
 	<arg name="static_pub_freq" default="25" />
 
-        <node pkg="moticon_insoles" type="sdk_read.py" 	name="moticon_insoles" output="screen">
+        <node pkg="moticon_insoles" type="from_sdk.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
 		<param name="left_cop_reference_frame" 			value="calcn_l" />
