@@ -207,5 +207,6 @@ catkin_install_python(PROGRAMS
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest(test/example.test)
+  add_rostest(test/wrenches_full_publisher.test)
+  add_rostest(test/cop_tfs.test)
 endif()

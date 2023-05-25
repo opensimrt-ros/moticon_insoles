@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<include file="$(find moticon_insoles)/launch/feet_wrench_and_ik_from_file.launch" >
+		<arg name="filename" value="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
+	</include>
+	<test test-name="pubtest" pkg="rostest" type="publishtest">
+                 <rosparam>
+                 topics:
+                 - name: /grf_left/wrench
+                 - name: /grf_right/wrench
+                 timeout: 10
+                 </rosparam>
+	</test>
+	<!-- node pkg="moticon_insoles" type="mynode" name="mynode" / -->
+	<node name="commander" pkg="test_moticon_insoles" type="simple_commander.py" />
+</launch>

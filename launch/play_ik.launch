@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+	<arg name="filename" default="/catkin_ws/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_ik_lower.sto"/>
+	<arg name="freq" default="25" />
+
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/human_2_wrenches.rviz" />
+
+	<!-- left_foot right_foot  -->
+	<include file="$(find osrt_ros)/launch/ik_bare_1992.launch">
+		<arg name="ik_file" value="$(arg filename)"/>
+		<arg name="async_run" value="true"/>
+	</include>
+
+
+	<param name="robot_description" command="cat /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf"/>
+
+	<node name="human_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+		<remap from="/joint_states" to="/model_generic/joint_states" />
+	</node>
+
+	<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" />
+
+	<node pkg="tf" type="static_transform_publisher" name="subtalar_r" args=" 0.00792000 -0.04877000 -0.04195000 0 0 0 talus_r calcn_r 100" />
+
+	<node pkg="tf" type="static_transform_publisher" name="mtp_r" args=" 0.00108000  0.17880000 -0.00200000 0 0 0 calcn_r toes_r 100" />
+
+	<node pkg="tf" type="static_transform_publisher" name="subtalar_l" args="-0.00792000 -0.04877000 -0.04195000 0 0 0 talus_l calcn_l 100" />
+
+	<node pkg="tf" type="static_transform_publisher" name="mtp_l" args="-0.00108000  0.17880000 -0.00200000 0 0 0 calcn_l toes_l 100" />
+
+	<include file="$(find gait1992_description)/launch/ground_tf.launch" />
+	<include file="$(find osrt_ros)/launch/custom.launch"/>
+	<node pkg="tf" type="static_transform_publisher" name="subject_opensim_to_ros" args="0 0 0 0.5 0.5 0.5 0.5 map subject_opensim $(arg freq)" />
+</launch>
+
+
