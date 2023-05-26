@@ -11,6 +11,8 @@
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
 		<param name="left_cop_reference_frame" 			value="calcn_l" />
 		<param name="right_cop_reference_frame" 		value="calcn_r" />
+		<param name="foot_length" 				value="1"/>
+		<param name="foot_width" 				value="0.5"/>
 		<param name="wait_for_trigger" value="true"/>
 		<param name="filename" 		value="$(arg filename)"/>
 		<remap from="left/wrench" 	to="/grf_left/wrench"/>
