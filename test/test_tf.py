@@ -47,4 +47,4 @@ class TestTF(unittest.TestCase):
 
 if __name__ == '__main__':
     import rostest
-    rostest.rosrun(PKG, 'test_bare_bones', TestTF)
+    rostest.rosrun(PKG, 'test_tf_node', TestTF)

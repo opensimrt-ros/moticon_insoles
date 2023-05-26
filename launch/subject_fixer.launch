@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="parent" default="map"/>
+	<arg name="body" default="subject_opensim"/>
+
+	<group ns="$(arg body)_fixer" >
+
+		<node pkg="gait1992_description" type="fixquaternions_server.py" 		name="pose_fixer" output="screen"/>
+		<node pkg="gait1992_description" type="floating_joint_state_publisher.py" 	name="imubody_joint_state_publisher" output="screen">
+			<param name="parent_frame_id" value="$(arg parent)"/>
+			<param name="child_frame_id" value="$(arg body)"/>
+			<param name="pose_publisher_name" value="pose_fixer"/>
+		</node>
+ 		<!-- node name="dynamic_reconfigure_load" pkg="dynamic_reconfigure" type="dynparam" args="load pose_fixer $(find gait1992_description)/imu_defaults/$(arg body).yaml" / -->
+	</group>
+
+</launch>
+

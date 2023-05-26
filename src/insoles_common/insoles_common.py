@@ -14,7 +14,7 @@ import tf2_ros
 from std_msgs.msg import Header, Float32
 from opensimrt_msgs.msg import Common
 from opensimrt_msgs.srv import SetFileNameSrv, SetFileNameSrvResponse
-from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped
+from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped, Transform
 from colorama import Fore
 from sensor_msgs.msg import Imu
 from math import pi
@@ -31,6 +31,12 @@ import csv
 from std_srvs.srv import Empty, EmptyResponse
 
 import buffer
+
+OpenSimTf = Transform()
+OpenSimTf.rotation.x = 0
+OpenSimTf.rotation.y = 0.707
+OpenSimTf.rotation.z = 0.707
+OpenSimTf.rotation.w = 0
 
 class InsolePublishers():
     def __init__(self):
@@ -404,12 +410,13 @@ class InsoleSrv:
                         foot_length = .27
                         foot_width = .1
                         t.transform.translation.x = foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
-                        t.transform.translation.y = foot_length*(msg_cop[0] + 0.5) 
+                        t.transform.translation.y = 10*foot_length*(msg_cop[0] + 0.5) 
                         t.transform.translation.z = 0
-                        t.transform.rotation.x = 0
-                        t.transform.rotation.y = 0.707
-                        t.transform.rotation.z = 0.707
-                        t.transform.rotation.w = 0
+                        #t.transform.rotation.x = 0
+                        #t.transform.rotation.y = 0.707
+                        #t.transform.rotation.z = 0.707
+                        #t.transform.rotation.w = 0
+                        t.transform.rotation = OpenSimTf.rotation
                         if self.publish_transforms:
                             self.broadcaster.sendTransform(t)
             

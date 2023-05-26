@@ -11,6 +11,7 @@ import tf2_ros
 from opensimrt_msgs.msg import Common
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import Header
+from insoles_common import OpenSimTf
 
 class CopTFPub:
     def __init__(self):
@@ -48,10 +49,11 @@ class CopTFPub:
         T.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
         T.transform.translation.y = self.foot_length*(msg_cop[0] + 0.5) 
         T.transform.translation.z = 0
-        T.transform.rotation.x = 0
-        T.transform.rotation.y = 0.707
-        T.transform.rotation.z = 0.707
-        T.transform.rotation.w = 0
+        T.transform.rotation = OpenSimTf.rotation
+        #T.transform.rotation.x = 0
+        #T.transform.rotation.y = 0.707
+        #T.transform.rotation.z = 0.707
+        #T.transform.rotation.w = 0
         self.broadcaster.sendTransform(T)
         
 

@@ -21,7 +21,11 @@ tmux split-window -v -p 50
 #tmux select-layout tiled
 #tmux select-pane -t 0
 tmux new-window
+tmux select-window -t 2
+tmux split-window -h
 tmux new-window
+tmux select-window -t 3
+tmux split-window -h
 tmux new-window
 sleep 2
 tmux send -t mysession:4.0 "rosparam set /use_sim_time true" C-m
@@ -43,12 +47,13 @@ tmux send -t mysession:1.5 "rostopic echo /clock" C-m
 tmux send -t mysession:1.6 "sleep 4; rosservice call /moticon_insoles/start_playback" C-m
 tmux send -t mysession:1.7 "sleep 3; rosservice call /inverse_kinematics_from_file/start" C-m
 #tmux send -t mysession:1.7 "sleep 3; rosservice call /start_multi/trigger" C-m
-#tmux send -t mysession:2.0 "rosbag record /id_node/output" C-m
-tmux send -t mysession:2.0 "rosrun osrt_ros graph_iks_old.bash" C-m
-tmux send -t mysession:3.0 "sleep 2.2; rosservice call /id_node/set_name_and_path \"{name: 's2_id_walking', path: '/tmp/s2' }\" " C-m
+tmux send -t mysession:2.0 "rosbag record /id_node/output /left/force /right/force " C-m
+#tmux send -t mysession:2.0 "rosrun osrt_ros graph_iks_old.bash" C-m
+tmux send -t mysession:3.0 "sleep 2.9; rosservice call /id_node/set_name_and_path \"{name: 's2_id_walking', path: '/tmp/s2' }\" " C-m
 
 #tmux send -t mysession:1.7 "ls -la" C-m
 #tmux setw synchronize-panes on
 
 tmux -2 a -t mysession
+
 

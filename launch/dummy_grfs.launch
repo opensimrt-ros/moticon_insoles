@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<arg name="static_pub_freq" default="25" />
+	<arg name="publish_calcaneous" default="true" />
+	<node pkg="moticon_insoles" name="cop_dummy_pub_left" type="dummy_cop.py" >
+		<remap from="foot_cop" to="/left/cop"/>
+		<param name="frame_id" value="left" />
+	</node>
+	<node pkg="moticon_insoles" name="cop_dummy_pub_right" type="dummy_cop.py" >
+		<remap from="foot_cop" to="/right/cop"/>
+		<param name="frame_id" value="right" />
+	</node>
+	<group if="$(arg publish_calcaneous)">
+	<!-- what is the transformation here? -->
+	<node pkg="tf" type="static_transform_publisher" name="left_calcn_static_broadcaster" args="-0.3 0 0  0 0 0  map calcn_l $(arg static_pub_freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="right_calcn_static_broadcaster" args="0.3 0 0  0 0 0  map calcn_r $(arg static_pub_freq)" />
+	</group>
+	<node pkg="moticon_insoles" type="publish_cop_tfs.py" name="cop_tf_publisher" output="screen">
+		<param name="left_cop_reference_frame" value="calcn_l"/>
+		<param name="right_cop_reference_frame" value="calcn_r"/>
+		<param name="foot_width" value="0.5"/>
+		<param name="foot_length" value="1.0"/>
+	</node>
+	<node name="dummy_wrench_left" type="dummy_wrenches.py" pkg="moticon_insoles">
+		<remap from="foot_wrench" to="/grf_left/wrench"/>
+		<param name="frame_id" value="left" />
+	</node>
+	<node name="dummy_wrench_right" type="dummy_wrenches.py" pkg="moticon_insoles">
+		<remap from="foot_wrench" to="/grf_right/wrench"/>
+		<param name="frame_id" value="right" />
+	</node>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/human_2_wrenches.rviz" />
+
+</launch>
