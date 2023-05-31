@@ -3,20 +3,23 @@
 
 	<arg name="name" 		default="openGo" />
 	<arg name="insole_freq" default="100" />
-	<arg name="static_pub_freq" default="25" />
+	<arg name="static_pub_freq" default="100" />
 	<arg name="filename" 		default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
-
+	<arg name="publish_transforms" 	default="true"/>
+	<arg name="output_left" 	default="/grf_left/wrench"/>
+	<arg name="output_right" 	default="/grf_right/wrench"/>
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
 		<param name="left_cop_reference_frame" 			value="calcn_l" />
 		<param name="right_cop_reference_frame" 		value="calcn_r" />
-		<param name="foot_length" 				value="1"/>
-		<param name="foot_width" 				value="0.5"/>
+		<param name="foot_length" 				value="0.26"/>
+		<param name="foot_width" 				value="0.09"/>
 		<param name="wait_for_trigger" value="true"/>
 		<param name="filename" 		value="$(arg filename)"/>
-		<remap from="left/wrench" 	to="/grf_left/wrench"/>
-		<remap from="right/wrench" 	to="/grf_right/wrench"/>
+		<remap from="left/wrench" 	to="$(arg output_left)"/>
+		<remap from="right/wrench" 	to="$(arg output_right)"/>
+		<param name="publish_transforms" value="$(arg publish_transforms)"/>
 	</node>
 
 	<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node_left" output="screen">

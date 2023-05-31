@@ -3,14 +3,14 @@
 
 	<arg name="name" 		default="openGo" />
 	<arg name="insole_freq" default="100" />
-	<arg name="static_pub_freq" default="25" />
+	<arg name="static_pub_freq" default="100" />
 
         <node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="filename" 		value="/catkin_ws/ew/ViconData/Ruoli/Motion_Insole/RealTimeIkIDS4/walking04_header_corrected.txt"/>
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
-		<param name="foot_length" 				value="1"/>
-		<param name="foot_width" 				value="0.5"/>
+		<param name="foot_length" 				value="0.26"/>
+		<param name="foot_width" 				value="0.09"/>
 		<!--param name="left_cop_reference_frame" 			value="calcn_l" />
 		<param name="right_cop_reference_frame" 		value="calcn_r" /-->
 		<param name="left_cop_reference_frame" 			value="map" />

@@ -3,7 +3,7 @@
 	<arg name="visualization" default="true" />
 	<arg name="filename" 	default="/srv/data/gait1992/inverse_kinematics/task_InverseKinematics.mot" />
 	<!-- arg name="filename" default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_ik_lower.sto"/ -->
-	<arg name="freq" default="25" />
+	<arg name="freq" default="100" />
 	<arg name="loops" default="1" />
 	<node if="$(arg visualization)" name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/human_2_wrenches.rviz" />
 
@@ -15,7 +15,7 @@
 	</include>
 
 
-	<include file="$(find gait1992_description)/launch/generate_urdf.launch"/>
+	<include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/>
 
 	<node name="human_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
 		<remap from="/joint_states" to="/model_generic/joint_states" />
@@ -23,18 +23,12 @@
 
 	<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" />
 
-	<node pkg="tf" type="static_transform_publisher" name="subtalar_r" args=" 0.00792000 -0.04877000 -0.04195000 0 0 0 talus_r calcn_r 100" />
+	<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
+		<arg name="freq" value="100"/>
+	</include>
 
-	<node pkg="tf" type="static_transform_publisher" name="mtp_r" args=" 0.00108000  0.17880000 -0.00200000 0 0 0 calcn_r toes_r 100" />
-
-	<node pkg="tf" type="static_transform_publisher" name="subtalar_l" args="-0.00792000 -0.04877000 -0.04195000 0 0 0 talus_l calcn_l 100" />
-
-	<node pkg="tf" type="static_transform_publisher" name="mtp_l" args="-0.00108000  0.17880000 -0.00200000 0 0 0 calcn_l toes_l 100" />
-
-	<include file="$(find gait1992_description)/launch/ground_tf.launch" />
 	<include file="$(find osrt_ros)/launch/custom.launch"/>
 
-	<include file="$(find osrt_ros)/launch/opensim_tf.launch"/>
 </launch>
 
 

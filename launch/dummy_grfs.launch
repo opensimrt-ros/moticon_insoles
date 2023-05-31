@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-	<arg name="static_pub_freq" default="25" />
+	<arg name="static_pub_freq" default="100" />
 	<arg name="publish_calcaneous" default="true" />
 	<node pkg="moticon_insoles" name="cop_dummy_pub_left" type="dummy_cop.py" >
 		<remap from="foot_cop" to="/left/cop"/>

@@ -15,6 +15,7 @@ from std_msgs.msg import Header, Float32
 from opensimrt_msgs.msg import Common
 from opensimrt_msgs.srv import SetFileNameSrv, SetFileNameSrvResponse
 from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped, Transform
+from insole_msgs.msg import InsoleSensorStamped
 from colorama import Fore
 from sensor_msgs.msg import Imu
 from math import pi
@@ -46,6 +47,7 @@ class InsolePublishers():
         self.cop = ["",""]
         self.wrench = ["",""]
         self.imu = ["",""]
+        self.insole = ["",""]
 
 def convert_to_imu(h, angular_velocity,linear_acceleration):
     imu_msg = Imu()   
@@ -258,6 +260,7 @@ class InsoleSrv:
             self.ips.cop[i] = rospy.Publisher(side+'/cop', Common, queue_size=1) ## here I probably want a geometry Point or a Point[]
             self.ips.wrench[i] = rospy.Publisher(side+'/wrench', WrenchStamped, queue_size=1)
             self.ips.imu[i] = rospy.Publisher(side+'/imu_raw', Imu, queue_size=1)
+            self.ips.insole[i] = rospy.Publisher(side+"/insole", InsoleSensorStamped, queue_size=1)
         self.broadcaster = tf2_ros.TransformBroadcaster()
 
         self.execution_timer = rospy.Publisher("/insoles", Float32, queue_size=1)
@@ -351,6 +354,8 @@ class InsoleSrv:
                     time_stamp = rospy.Time.now()
                     h.stamp = time_stamp
 
+                    msg_insole_msg = InsoleSensorStamped()
+
                     ## now I need to publish it to the right side. 
                     ## maybe this is wrong and I need to publish them both at the same time, but since I receive a message which is from either one side or the other, than the other side's info would be zero, so I didn't solve anything by doing this, I just pushed the problem further. At some point I need to remember which side is doing what. I can't rely on tf for this, so maybe I need to remember the latest values, update them here and publish both at the same time?
 
@@ -367,7 +372,7 @@ class InsoleSrv:
                         t.child_frame_id = "left"
                         x_axis_direction = -1
                         t.header.frame_id = self.l_frame
-
+                    msg_insole_msg.header = h
 
                     pressure = 0
                     force = 0
@@ -382,8 +387,8 @@ class InsoleSrv:
                             rospy.logdebug("time counter %d, time difference %d"%(self.this_time[side], timediff))
                             tmsg =  Float32(timediff)
                             self.ips.time[side].publish(tmsg)
+                            msg_insole_msg.time = tmsg
                         self.last_time = deepcopy(self.this_time)
-
                     if not msg_total_force:
                         #rospy.logwarn("no total_force. not publishing force or wrench topics")
                         pass
@@ -396,7 +401,8 @@ class InsoleSrv:
                         force = Vector3(y=msg_total_force)
                         wren = Wrench(force=force) #force, torque
                         wmsg = WrenchStamped(h,wren)
-
+                        msg_insole_msg.force = fmsg 
+                        msg_insole_msg.wrench = wren
                         self.ips.wrench[side].publish(wmsg)
                     ## we also want to send a tf for the cop
 
@@ -406,6 +412,7 @@ class InsoleSrv:
                         pass
                     else:
                         #print("Issuign transforms")
+                        msg_insole_msg.cop.data = msg_cop
                         cmsg = Common(h, msg_cop)
                         self.ips.cop[side].publish(cmsg)
                         t.header.stamp = time_stamp
@@ -417,6 +424,7 @@ class InsoleSrv:
                         #t.transform.rotation.z = 0.707
                         #t.transform.rotation.w = 0
                         t.transform.rotation = OpenSimTf.rotation
+                        msg_insole_msg.ts = t
                         if self.publish_transforms:
                             self.broadcaster.sendTransform(t)
             
@@ -426,14 +434,16 @@ class InsoleSrv:
                     else:
                         pmsg = Common(h, msg_press)
                         self.ips.pressure[side].publish(pmsg)
-
+                        msg_insole_msg.pressure.data = msg_press
                     if not msg_ang or not msg_acc:
                         #rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
                         pass
                     else:
                         imsg = convert_to_imu(h, msg_ang, msg_acc)
                         self.ips.imu[side].publish(imsg)
+                        msg_insole_msg.imu = imsg
 
+                    self.ips.insole[side].publish(msg_insole_msg)
                     self.rate.sleep()
                     toc = time.perf_counter()
                     self.execution_timer.publish((toc-tic)*1000)
