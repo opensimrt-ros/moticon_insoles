@@ -18,6 +18,7 @@
 	<include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/>
 
 	<node name="human_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+		<param name="ignore_timestamp" value="true"/>
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
 

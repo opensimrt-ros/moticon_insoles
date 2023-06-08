@@ -60,7 +60,7 @@ Visualization Manager:
       Arrow Width: 0.5
       Class: rviz/WrenchStamped
       Enabled: true
-      Force Arrow Scale: 0.0020000000949949026
+      Force Arrow Scale: 0.0010000000474974513
       Force Color: 204; 51; 51
       Hide Small Values: false
       History Length: 1
@@ -75,7 +75,7 @@ Visualization Manager:
       Arrow Width: 0.5
       Class: rviz/WrenchStamped
       Enabled: true
-      Force Arrow Scale: 0.0020000000949949026
+      Force Arrow Scale: 0.0010000000474974513
       Force Color: 204; 51; 51
       Hide Small Values: false
       History Length: 1
@@ -119,6 +119,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        femur_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         femur_r:
           Alpha: 1
           Show Axes: false
@@ -132,21 +137,41 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        ground:
+        femur_r_imu:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         pelvis:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        pelvis_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        subject_opensim:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         talus_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        talus_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         talus_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        talus_r_imu:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -164,6 +189,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        tibia_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         tibia_r:
           Alpha: 1
           Show Axes: false
@@ -177,6 +207,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        tibia_r_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         toes_l:
           Alpha: 1
           Show Axes: false
@@ -197,6 +232,15 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         torso_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        torso_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        urdf_pelvis:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -223,21 +267,23 @@ Visualization Manager:
           Value: false
         femur_l_f2:
           Value: false
+        femur_l_imu:
+          Value: true
         femur_r:
           Value: false
         femur_r_f1:
           Value: false
         femur_r_f2:
           Value: false
-        ground:
-          Value: false
+        femur_r_imu:
+          Value: true
         left:
           Value: true
         map:
           Value: false
         pelvis:
           Value: false
-        pelvis_heading_frame:
+        pelvis_imu:
           Value: true
         right:
           Value: true
@@ -245,20 +291,28 @@ Visualization Manager:
           Value: true
         talus_l:
           Value: false
+        talus_l_imu:
+          Value: true
         talus_r:
           Value: false
+        talus_r_imu:
+          Value: true
         tibia_l:
           Value: false
         tibia_l_f1:
           Value: false
         tibia_l_f2:
           Value: false
+        tibia_l_imu:
+          Value: true
         tibia_r:
           Value: false
         tibia_r_f1:
           Value: false
         tibia_r_f2:
           Value: false
+        tibia_r_imu:
+          Value: true
         toes_l:
           Value: false
         toes_r:
@@ -269,6 +323,10 @@ Visualization Manager:
           Value: false
         torso_f2:
           Value: false
+        torso_imu:
+          Value: true
+        urdf_pelvis:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -277,40 +335,54 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          ground:
-            {}
-          pelvis_heading_frame:
-            {}
-          subject_opensim:
-            pelvis:
-              femur_l_f1:
-                femur_l_f2:
-                  femur_l:
-                    tibia_l_f1:
-                      tibia_l_f2:
-                        tibia_l:
-                          talus_l:
-                            calcn_l:
-                              left:
-                                {}
-                              toes_l:
-                                {}
-              femur_r_f1:
-                femur_r_f2:
-                  femur_r:
-                    tibia_r_f1:
-                      tibia_r_f2:
-                        tibia_r:
-                          talus_r:
-                            calcn_r:
-                              right:
-                                {}
-                              toes_r:
-                                {}
-              torso_f1:
-                torso_f2:
-                  torso:
+          pelvis:
+            femur_l_f1:
+              femur_l_f2:
+                femur_l:
+                  femur_l_imu:
                     {}
+                  tibia_l_f1:
+                    tibia_l_f2:
+                      tibia_l:
+                        talus_l:
+                          calcn_l:
+                            left:
+                              {}
+                            toes_l:
+                              {}
+                          talus_l_imu:
+                            {}
+                        tibia_l_imu:
+                          {}
+            femur_r_f1:
+              femur_r_f2:
+                femur_r:
+                  femur_r_imu:
+                    {}
+                  tibia_r_f1:
+                    tibia_r_f2:
+                      tibia_r:
+                        talus_r:
+                          calcn_r:
+                            right:
+                              {}
+                            toes_r:
+                              {}
+                          talus_r_imu:
+                            {}
+                        tibia_r_imu:
+                          {}
+            pelvis_imu:
+              {}
+            torso_f1:
+              torso_f2:
+                torso:
+                  torso_imu:
+                    {}
+          subject_opensim:
+            {}
+        urdf_pelvis:
+          {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -367,7 +439,7 @@ Window Geometry:
   Height: 846
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000002b4fc0200000008fb000000100044006900730070006c00610079007303000000380000010c0000028300000288fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002b4fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000002b4000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000003efc0100000002fb0000000800540069006d00650100000000000004b00000030700fffffffb0000000800540069006d006501000000000000045000000000000000000000039b000002b400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000002b4fc0200000008fb000000100044006900730070006c00610079007303000007ff000001340000028300000288fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f000002b4fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000002b4000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004b00000003efc0100000002fb0000000800540069006d00650100000000000004b00000030700fffffffb0000000800540069006d006501000000000000045000000000000000000000039b000002b400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -378,4 +450,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 720
-  Y: 30
+  Y: 4
