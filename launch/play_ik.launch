@@ -17,18 +17,18 @@
 
 	<include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/>
 
-	<node name="human_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-		<param name="ignore_timestamp" value="true"/>
+	<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
+		<!--param name="ignore_timestamp" value="true"/-->
 		<remap from="/joint_states" to="/model_generic/joint_states" />
 	</node>
 
-	<node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" />
+	<!-- node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" / -->
 
 	<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
 		<arg name="freq" value="100"/>
 	</include>
 
-	<include file="$(find osrt_ros)/launch/custom.launch"/>
+	<include file="$(find osrt_ros)/launch/custom_filtered.launch"/>
 
 </launch>
 

@@ -8,3 +8,5 @@ getter = InsoleDataFromSocket()
 insrv.set_getter(getter)
 insrv.init()
 insrv.run_server()
+rospy.spin()
+

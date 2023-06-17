@@ -265,6 +265,11 @@ class InsoleSrv:
 
         self.execution_timer = rospy.Publisher("/insoles", Float32, queue_size=1)
 
+        #New addition. We are going to publish the values with the delay that they actually have and rely on ROS to synchronize them
+        #Good luck to us.
+
+        self.estimated_delay = rospy.get_param("~estimated_delay", default=0) # in seconds, because SI.
+
         insole_rate = rospy.get_param("~insole_rate", default=100)
         node_freq = 2*insole_rate
         rospy.loginfo(f"Insole rate read freq set to {insole_rate}")
@@ -351,7 +356,7 @@ class InsoleSrv:
 
                     # Publish these guys
                     h = Header()
-                    time_stamp = rospy.Time.now()
+                    time_stamp = rospy.Time.now() - rospy.Duration(self.estimated_delay)
                     h.stamp = time_stamp
 
                     msg_insole_msg = InsoleSensorStamped()

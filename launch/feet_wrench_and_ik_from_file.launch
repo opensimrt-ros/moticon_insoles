@@ -8,14 +8,18 @@
 	<arg name="publish_transforms" 	default="true"/>
 	<arg name="output_left" 	default="/grf_left/wrench"/>
 	<arg name="output_right" 	default="/grf_right/wrench"/>
+	<arg name="estimated_delay"	default="0"/>
+	<arg name="foot_length" 	default="0.26"/>
+	<arg name="foot_width" 		default="0.09"/>
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
 		<param name="left_cop_reference_frame" 			value="calcn_l" />
 		<param name="right_cop_reference_frame" 		value="calcn_r" />
-		<param name="foot_length" 				value="0.26"/>
-		<param name="foot_width" 				value="0.09"/>
+		<param name="foot_length" 				value="$(arg foot_length)"/>
+		<param name="foot_width" 				value="$(arg foot_width)"/>
 		<param name="wait_for_trigger" value="true"/>
+		<param name="estimated_delay"	value="$(arg estimated_delay)"/>
 		<param name="filename" 		value="$(arg filename)"/>
 		<remap from="left/wrench" 	to="$(arg output_left)"/>
 		<remap from="right/wrench" 	to="$(arg output_right)"/>

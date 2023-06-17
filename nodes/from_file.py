@@ -8,4 +8,5 @@ getter = InsoleDataFromFile(filename = rospy.get_param("~filename", default="no_
 insrv.set_getter(getter)
 insrv.init()
 insrv.run_server()
+rospy.spin()
 
