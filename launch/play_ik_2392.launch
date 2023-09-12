@@ -3,15 +3,15 @@
 	<arg name="visualization" default="true" />
 	<arg name="filename" 	default="/srv/data/gait1992/inverse_kinematics/task_InverseKinematics.mot" />
 	<!-- arg name="filename" default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/2023-03-03-11-56-24walking012_ik_lower.sto"/ -->
-	<arg name="model_file" 	default="/srv/data/gait1992/residual_reduction_algorithm/model_adjusted.osim" />
+	<arg name="model_file" 	default="/catkin_ws/src/osrt_ros/data/FK scaled model.osim" />
 	<arg name="freq" default="100" />
 	<arg name="simulation_loops" default="1" />
 	<node if="$(arg visualization)" name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/human_2_wrenches.rviz" />
 
 	<!-- left_foot right_foot  -->
-	<include file="$(find osrt_ros)/launch/ik_bare_1992.launch">
+	<include file="$(find osrt_ros)/launch/ik_bare_2392.launch">
+		<arg name="model_file" value="$(arg model_file)" />
 		<arg name="ik_file" value="$(arg filename)"/>
-		<arg name="model_file" value="$(arg model_file)"/>
 		<arg name="async_run" value="true"/>
 		<arg name="simulation_loops" value="$(arg simulation_loops)"/>
 	</include>

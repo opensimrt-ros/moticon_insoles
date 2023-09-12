@@ -33,7 +33,7 @@ Panels:
     SyncMode: 0
     SyncSource: ""
 Preferences:
-  PromptSaveOnExit: true
+  PromptSaveOnExit: false
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -349,4 +349,4 @@ Window Geometry:
     collapsed: false
   Width: 1200
   X: 233
-  Y: 30
+  Y: 4
