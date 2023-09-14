@@ -253,6 +253,7 @@ class InsoleSrv:
 
         self.foot_length = rospy.get_param("~foot_length", default=1)
         self.foot_width = rospy.get_param("~foot_width", default=0.5)
+        self.grf_origin_z_offset = rospy.get_param("~grf_origin_z_offset", default=0.0)
         for i,side in enumerate(["left","right"]):
             self.ips.pressure[i] = rospy.Publisher(side+'/pressure', Common, queue_size=1)
             self.ips.force[i] = rospy.Publisher(side+'/force', Float32, queue_size=1)
@@ -423,7 +424,7 @@ class InsoleSrv:
                         t.header.stamp = time_stamp
                         t.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
                         t.transform.translation.y = self.foot_length*(msg_cop[0] + 0.5) 
-                        t.transform.translation.z = 0
+                        t.transform.translation.z = self.grf_origin_z_offset
                         #t.transform.rotation.x = 0
                         #t.transform.rotation.y = 0.707
                         #t.transform.rotation.z = 0.707
