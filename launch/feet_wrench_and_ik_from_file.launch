@@ -12,6 +12,7 @@
 	<arg name="foot_length" 	default="0.26"/>
 	<arg name="foot_width" 		default="0.09"/>
 	<arg name="grf_origin_z_offset" default="0.0"/>
+	<arg name="start_time"		default="0.0"/>
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
@@ -26,6 +27,7 @@
 		<remap from="left/wrench" 	to="$(arg output_left)"/>
 		<remap from="right/wrench" 	to="$(arg output_right)"/>
 		<param name="publish_transforms" value="$(arg publish_transforms)"/>
+		<param name="start_time"				value="$(arg start_time)"/>
 	</node>
 
 	<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node_left" output="screen">

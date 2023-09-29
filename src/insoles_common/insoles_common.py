@@ -116,10 +116,17 @@ def insole_data_save(file_name, data):
 
 class InsoleDataGetter(ABC):
     """Abstract class to interface between reading from file or sensor"""
+    
+    start_time = None
+
+    @abstractmethod
+    def set_start_time(self):
+        pass
 
     @abc.abstractproperty
-    def ok():
+    def ok(self):
         pass
+    
     @abstractmethod
     def start_listening(self):
         pass
@@ -143,12 +150,17 @@ class InsoleDataFromSocket(InsoleDataGetter):
         self.connection = None
         self.connection_ok = True
 
+    def set_start_time(self):
+        """ Default start_time is zero. When reading from sockets we don't want to check this ever, I think. """
+        self.start_time = 0
+
     @property
     def ok(self):
         #print("called ok")
         return self.connection_ok
 
     def start_listening(self):
+        self.set_start_time()
         rospy.loginfo('Waiting for a connection...')
         self.connection, client_address = self.sock.accept()
         rospy.loginfo('Connection created.')
@@ -179,18 +191,32 @@ class InsoleDataFromSocket(InsoleDataGetter):
     def __del__(self):
         self.connection.close()
 
+class NotYetStartedExpection(Exception):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+
 class InsoleDataFromFile(InsoleDataGetter):
     """Data from file class"""
     def __init__(self, filename = ""):
         self.filename = filename
         self.file = None
         self.reader = None
+        self.data = []
+    
+    def set_start_time(self):
+        """ Default start_time is zero """
+        self.start_time = rospy.get_param("~start_time", default=0)
 
     def start_listening(self):
         #maybe opens file and we have a getline thing going
+        self.set_start_time()
         print(self.filename)
         self.file = open(self.filename, "r")
-        self.reader = csv.DictReader(self.file, delimiter=" ")
+        ## maybe file operations are too slow to be executed inside the loop. let's test this out
+        reader = csv.DictReader(self.file, delimiter=" ")
+        for row in reader:
+            self.data.append(row)
+        self.reader = iter(self.data)
         #print(next(self.reader))
 
     @property
@@ -202,6 +228,9 @@ class InsoleDataFromFile(InsoleDataGetter):
             return False
 
     def get_data(self):
+        if rospy.Time.now() < rospy.Time.from_sec(self.start_time):
+            return
+
         frame_msg = next(self.reader)
         #print(frame_msg)
         def get_prop(props): ## If I try to access a property that was not saved I get a key error. Since you can disable pressure sensors
@@ -240,6 +269,10 @@ class InsoleSrv:
     def init(self):
         #rospy.init_node("moticon_insoles", anonymous=True)
         self.publish_transforms = rospy.get_param("~publish_transforms", True)
+        if self.publish_transforms:
+            self.broadcaster = tf2_ros.TransformBroadcaster()
+        else:
+            self.broadcaster = None #it wont deal with any transforms, which simplifies trying to find transformation issues
         self.waiting = rospy.get_param("~wait_for_trigger", default=False)
         if self.waiting:
             rospy.logwarn("waiting for service trigger to start playback")
@@ -262,7 +295,6 @@ class InsoleSrv:
             self.ips.wrench[i] = rospy.Publisher(side+'/wrench', WrenchStamped, queue_size=1)
             self.ips.imu[i] = rospy.Publisher(side+'/imu_raw', Imu, queue_size=1)
             self.ips.insole[i] = rospy.Publisher(side+"/insole", InsoleSensorStamped, queue_size=1)
-        self.broadcaster = tf2_ros.TransformBroadcaster()
 
         self.execution_timer = rospy.Publisher("/insoles", Float32, queue_size=1)
 
@@ -325,7 +357,11 @@ class InsoleSrv:
         while not rospy.is_shutdown(): ## maybe while ros ok
             rospy.loginfo_once("Will start listening")
             self.getter.start_listening()
+            rospy.logwarn("################### start_time from getter: %s"%self.getter.start_time)
             self.rate.sleep()
+            started = False
+            time_stamp = None
+            last_time_stamp = None
             try:
                 while not rospy.is_shutdown() and self.getter.ok: ## we maybe want to rate limit this.
                     rospy.logdebug("Inner loop listening")
@@ -335,8 +371,22 @@ class InsoleSrv:
                     tic = time.perf_counter()
 
                     try:
-                        msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = self.getter.get_data()
+                        response = self.getter.get_data()
+                        if response and len(response) == 7:
+                            msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
+                            started = True
+                        else:
+                            if started:
+                                ##I started but got a none, so this means that I stopped?
+                                started = False
+                                rospy.logwarn("I think I have stopped. last published time: %s"%time_stamp)
+                            else:
+                                rospy.logwarn("No data read. Maybe I haven't started yet?")
+                            self.rate.sleep()
+                                
+                            continue
                     except StopIteration:
+                        rospy.logwarn_once("I got a StopIteration exception, so I must have stopped. last published time: %s"%time_stamp)
                         break
                     except Exception as e:
                         print(e)
@@ -357,8 +407,14 @@ class InsoleSrv:
 
                     # Publish these guys
                     h = Header()
-                    time_stamp = rospy.Time.now() - rospy.Duration(self.estimated_delay)
+                    #time_stamp = rospy.Time.now() - rospy.Duration(self.estimated_delay)
+                    time_stamp = rospy.Time.now()
+                    if time_stamp == last_time_stamp:
+                        rospy.logerr("got same time_stamp twice! at: %s"%time_stamp)
+                    else:
+                        rospy.logdebug("time has passed! wow, we can at least trust this.")
                     h.stamp = time_stamp
+                    rospy.logwarn_once("start_time that is actually used for header: %s"%time_stamp)
 
                     msg_insole_msg = InsoleSensorStamped()
 
@@ -431,8 +487,11 @@ class InsoleSrv:
                         #t.transform.rotation.w = 0
                         t.transform.rotation = OpenSimTf.rotation
                         msg_insole_msg.ts = t
-                        if self.publish_transforms:
+                        if not t.header.frame_id:
+                            rospy.logerr("frame_id not set!")
+                        elif self.publish_transforms:
                             self.broadcaster.sendTransform(t)
+
             
                     if not msg_press:
                         #rospy.logwarn_once("no pressure data. not publishing")
@@ -451,6 +510,7 @@ class InsoleSrv:
 
                     self.ips.insole[side].publish(msg_insole_msg)
                     self.rate.sleep()
+                    last_time_stamp = time_stamp
                     toc = time.perf_counter()
                     self.execution_timer.publish((toc-tic)*1000)
                     #rospy.loginfo(f"time it took to run over loop once {(toc - tic)*1000:0.4f} ms")
