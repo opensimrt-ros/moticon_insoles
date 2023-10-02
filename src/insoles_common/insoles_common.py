@@ -202,6 +202,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         self.file = None
         self.reader = None
         self.data = []
+        self.sensors =["P%d"%sensor for sensor in range(1,17)] 
     
     def set_start_time(self):
         """ Default start_time is zero """
@@ -252,7 +253,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         msg_cop             = get_prop(["cop1","cop2"])
         msg_ang             = get_prop(["ang1","ang2","ang3"])   
         msg_acc             = get_prop(["acc1","acc2","acc3"]) 
-        msg_pres            = get_prop(["P%d"%sensor for sensor in range(1,17)]) # P1...P16
+        msg_pres            = get_prop(self.sensors) # P1...P16
         return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
 
     def __del__(self):
@@ -509,6 +510,8 @@ class InsoleSrv:
                         msg_insole_msg.imu = imsg
 
                     self.ips.insole[side].publish(msg_insole_msg)
+                    #toc_before_sleep_time = time.perf_counter()
+                    #print("Execution time %f ms"%(toc_before_sleep_time-tic)*1000)
                     self.rate.sleep()
                     last_time_stamp = time_stamp
                     toc = time.perf_counter()
