@@ -118,6 +118,7 @@ class InsoleDataGetter(ABC):
     """Abstract class to interface between reading from file or sensor"""
     
     start_time = None
+    start_frame = [None, None]
 
     @abstractmethod
     def set_start_time(self):
@@ -151,8 +152,8 @@ class InsoleDataFromSocket(InsoleDataGetter):
         self.connection_ok = True
 
     def set_start_time(self):
-        """ Default start_time is zero. When reading from sockets we don't want to check this ever, I think. """
-        self.start_time = 0
+        """ Default start_time is the time of the first frame actually. I need to make sure this is close, otherwise the calculations for frame time transformations will be incorrect. """
+        self.start_time = rospy.Time.now().to_sec()
 
     @property
     def ok(self):
@@ -160,7 +161,6 @@ class InsoleDataFromSocket(InsoleDataGetter):
         return self.connection_ok
 
     def start_listening(self):
-        self.set_start_time()
         rospy.loginfo('Waiting for a connection...')
         self.connection, client_address = self.sock.accept()
         rospy.loginfo('Connection created.')
@@ -181,6 +181,10 @@ class InsoleDataFromSocket(InsoleDataGetter):
         msg_time = msg.data_message.time
         if msg_time == 0: ## we want to catch that weird message with Frame = 0
             rospy.logwarn("Got this message with a strange time_stamp:\n%s"%msg)
+        if not self.start_time:
+            self.set_start_time()
+        if not self.start_frame[side]:
+            self.start_frame[side] = msg_time
         msg_total_force = msg.data_message.total_force
         msg_cop = msg.data_message.cop
         msg_ang = msg.data_message.angular
@@ -207,16 +211,25 @@ class InsoleDataFromFile(InsoleDataGetter):
     def set_start_time(self):
         """ Default start_time is zero """
         self.start_time = rospy.get_param("~start_time", default=0)
-
+        
     def start_listening(self):
         #maybe opens file and we have a getline thing going
-        self.set_start_time()
         print(self.filename)
         self.file = open(self.filename, "r")
         ## maybe file operations are too slow to be executed inside the loop. let's test this out
         reader = csv.DictReader(self.file, delimiter=" ")
         for row in reader:
             self.data.append(row)
+        self.set_start_time() ## this is a bit different from live and file, but I think it is okay.
+        #print(self.data)
+        for row in self.data:
+            if row["side"] == "0":
+                self.start_frame[0] = int(row["Frame"])
+                break
+        for row in self.data:
+            if row["side"] == "1":
+                self.start_frame[1] = int(row["Frame"])
+        print(self.start_frame)
         self.reader = iter(self.data)
         #print(next(self.reader))
 
@@ -229,6 +242,8 @@ class InsoleDataFromFile(InsoleDataGetter):
             return False
 
     def get_data(self):
+        if not self.start_time:
+            self.set_start_time()
         if rospy.Time.now() < rospy.Time.from_sec(self.start_time):
             return
 
@@ -245,7 +260,7 @@ class InsoleDataFromFile(InsoleDataGetter):
             else:
                 return tuple([float(frame_msg.get(key)) for key in props])
 
-        msg_time            = get_prop(["Frame"])
+        msg_time            = int(get_prop(["Frame"]))
         if msg_time == 0: ## there is a weird incomplete message, I think it is a status message, that crashes the saver. it doesn't show up very often so it is hard to debug. 
             return
         side                = int(get_prop(["side"]))
@@ -304,9 +319,9 @@ class InsoleSrv:
 
         self.estimated_delay = rospy.get_param("~estimated_delay", default=0) # in seconds, because SI.
 
-        insole_rate = rospy.get_param("~insole_rate", default=100)
-        node_freq = 2*insole_rate
-        rospy.loginfo(f"Insole rate read freq set to {insole_rate}")
+        self.insole_rate = rospy.get_param("~insole_rate", default=100)
+        node_freq = 2*self.insole_rate
+        rospy.loginfo(f"Insole rate read freq set to {self.insole_rate}")
         rospy.loginfo(f"Node freq will be set to {node_freq}")
         self.rate = rospy.Rate(node_freq) ## if we read at 100 hertz from 2 sensors this should be enough?
         self.last_time = [None,None] ## left and right have different counters!
@@ -353,6 +368,170 @@ class InsoleSrv:
         self.savefile_name = req.path + "/" + req.name + "_insole.txt"
         return SetFileNameSrvResponse()
 
+    def get_timestamp(self, frame_count, side):
+        ## I am going to calculate the timestamp based on the frame count!
+        #return rospy.Time.now() ## we know this will not work.
+        ##doing a 3's rule
+        return rospy.Time.from_sec((frame_count - self.getter.start_frame[side])*self.insole_rate + self.getter.start_time)
+
+    def loop_once(self):
+        rospy.logdebug("Inner loop listening")
+        if self.waiting:
+            rospy.logwarn_once("waiting...")
+            return
+        tic = time.perf_counter()
+
+        #try:
+        if (True):
+            response = self.getter.get_data()
+            if response and len(response) == 7:
+                msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
+                self.started = True
+            else:
+                if self.started:
+                    ##I started but got a none, so this means that I stopped?
+                    self.started = False
+                    rospy.logwarn("I think I have stopped. last published time: %s"%self.time_stamp)
+                else:
+                    #rospy.logwarn("No data read. Maybe I haven't started yet?")
+                    pass
+                return
+        #except Exception as e:
+        #    print(e)
+        #    rospy.logerr("something went wrong when getting data! %s"%e)
+        #    print("something went wrong when getting data!")
+        #    return
+        #create dict we want to save later:
+        if self.recording:
+            #rospy.loginfo("REC\r")
+            try:
+                self.savedict_list.append(extract_insole_data(msg))
+
+            except Exception as exc:
+                rospy.logerr("could not create savedict. data for this frame will not be saved.%s"%exc)
+
+        # Filter because insole is noisy.
+        #TODO: actually the saved data would allow us to space the samples appropriately in time and also filter them. To do it rt we would need a buffer, so consider this.
+
+
+        # Publish these guys
+        h = Header()
+        #self.time_stamp = rospy.Time.now() - rospy.Duration(self.estimated_delay)
+        #self.time_stamp = rospy.Time.now()
+        ## lets make this much more complicated now.
+        self.time_stamp = self.get_timestamp(msg_time,side)
+        if self.time_stamp == self.last_time_stamp:
+            rospy.logerr("got same time_stamp twice! at: %s"%self.time_stamp)
+        #elif self.time_stamp <= self.last_time_stamp:
+        #    rospy.logerr("going back in time, but not really i have 2 insoles, i need to keep separate times for each side!")
+        #else:
+        #    rospy.logdebug("time has passed! wow, we can at least trust this.")
+        h.stamp = self.time_stamp
+        rospy.logwarn_once("start_time that is actually used for header: %s"%self.time_stamp)
+
+        msg_insole_msg = InsoleSensorStamped()
+
+        ## now I need to publish it to the right side. 
+        ## maybe this is wrong and I need to publish them both at the same time, but since I receive a message which is from either one side or the other, than the other side's info would be zero, so I didn't solve anything by doing this, I just pushed the problem further. At some point I need to remember which side is doing what. I can't rely on tf for this, so maybe I need to remember the latest values, update them here and publish both at the same time?
+
+
+        t = TransformStamped()
+        if side: ## or the other way around, needs checking
+            h.frame_id = "right"
+            t.child_frame_id = "right"
+            x_axis_direction = 1
+            t.header.frame_id = self.r_frame
+
+        else:
+            h.frame_id = "left"
+            t.child_frame_id = "left"
+            x_axis_direction = -1
+            t.header.frame_id = self.l_frame
+        msg_insole_msg.header = h
+
+        pressure = 0
+        force = 0
+        cop = (0,0)
+        if not msg_time:
+            #rospy.logwarn("no time in message!")
+            pass
+        else:
+            self.this_time[side] = msg_time
+            if self.this_time[side] and self.last_time[side]:
+                timediff = self.this_time[side] - self.last_time[side]   
+                rospy.logdebug("time counter %d, time difference %d"%(self.this_time[side], timediff))
+                tmsg =  Float32(timediff)
+                self.ips.time[side].publish(tmsg)
+                msg_insole_msg.time = tmsg
+            self.last_time = deepcopy(self.this_time)
+        if not msg_total_force:
+            #rospy.logwarn("no total_force. not publishing force or wrench topics")
+            pass
+        else:
+            fmsg = Float32(msg_total_force)
+            try:
+                self.ips.force[side].publish(fmsg)
+            except Exception as e:
+                rospy.logerr("total force looks like this: %s and I can't publish it!! %s"%(msg_total_force, e))
+            force = Vector3(y=msg_total_force)
+            wren = Wrench(force=force) #force, torque
+            wmsg = WrenchStamped(h,wren)
+            msg_insole_msg.force = fmsg 
+            msg_insole_msg.wrench = wren
+            self.ips.wrench[side].publish(wmsg)
+        ## we also want to send a tf for the cop
+
+
+        if not msg_cop:
+            #rospy.logwarn_once("no cop. not publishing ...")
+            pass
+        else:
+            #print("Issuign transforms")
+            msg_insole_msg.cop.data = msg_cop
+            cmsg = Common(h, msg_cop)
+            self.ips.cop[side].publish(cmsg)
+            t.header.stamp = self.time_stamp
+            t.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
+            t.transform.translation.y = self.foot_length*(msg_cop[0] + 0.5) 
+            t.transform.translation.z = self.grf_origin_z_offset
+            #t.transform.rotation.x = 0
+            #t.transform.rotation.y = 0.707
+            #t.transform.rotation.z = 0.707
+            #t.transform.rotation.w = 0
+            t.transform.rotation = OpenSimTf.rotation
+            msg_insole_msg.ts = t
+            if not t.header.frame_id:
+                rospy.logerr("frame_id not set!")
+            elif self.publish_transforms:
+                self.broadcaster.sendTransform(t)
+
+
+        if not msg_press:
+            #rospy.logwarn_once("no pressure data. not publishing")
+            pass
+        else:
+            pmsg = Common(h, msg_press)
+            self.ips.pressure[side].publish(pmsg)
+            msg_insole_msg.pressure.data = msg_press
+        if not msg_ang or not msg_acc:
+            #rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
+            pass
+        else:
+            imsg = convert_to_imu(h, msg_ang, msg_acc)
+            self.ips.imu[side].publish(imsg)
+            msg_insole_msg.imu = imsg
+
+        self.ips.insole[side].publish(msg_insole_msg)
+        #toc_before_sleep_time = time.perf_counter()
+        #print("Execution time %f ms"%(toc_before_sleep_time-tic)*1000)
+        self.last_time_stamp = deepcopy(self.time_stamp)
+        toc = time.perf_counter()
+        self.execution_timer.publish((toc-tic)*1000)
+        #rospy.loginfo(f"time it took to run over loop once {(toc - tic)*1000:0.4f} ms")
+    #raise rospy.ROSInterruptException("This is fine. It's the way to close this otherwise it will run forever.")
+
+
+
     def run_server(self, ):
 
         while not rospy.is_shutdown(): ## maybe while ros ok
@@ -360,164 +539,24 @@ class InsoleSrv:
             self.getter.start_listening()
             rospy.logwarn("################### start_time from getter: %s"%self.getter.start_time)
             self.rate.sleep()
-            started = False
-            time_stamp = None
-            last_time_stamp = None
-            try:
-                while not rospy.is_shutdown() and self.getter.ok: ## we maybe want to rate limit this.
-                    rospy.logdebug("Inner loop listening")
-                    if self.waiting:
-                        self.rate.sleep()
-                        continue
-                    tic = time.perf_counter()
-
-                    try:
-                        response = self.getter.get_data()
-                        if response and len(response) == 7:
-                            msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
-                            started = True
-                        else:
-                            if started:
-                                ##I started but got a none, so this means that I stopped?
-                                started = False
-                                rospy.logwarn("I think I have stopped. last published time: %s"%time_stamp)
-                            else:
-                                rospy.logwarn("No data read. Maybe I haven't started yet?")
-                            self.rate.sleep()
-                                
-                            continue
-                    except StopIteration:
-                        rospy.logwarn_once("I got a StopIteration exception, so I must have stopped. last published time: %s"%time_stamp)
-                        break
-                    except Exception as e:
-                        print(e)
-                        print("something went wrong when getting data!")
-                        continue
-                    #create dict we want to save later:
-                    if self.recording:
-                        #rospy.loginfo("REC\r")
-                        try:
-                            self.savedict_list.append(extract_insole_data(msg))
-
-                        except Exception as exc:
-                            rospy.logerr("could not create savedict. data for this frame will not be saved.%s"%exc)
-
-                    # Filter because insole is noisy.
-                    #TODO: actually the saved data would allow us to space the samples appropriately in time and also filter them. To do it rt we would need a buffer, so consider this.
-
-
-                    # Publish these guys
-                    h = Header()
-                    #time_stamp = rospy.Time.now() - rospy.Duration(self.estimated_delay)
-                    time_stamp = rospy.Time.now()
-                    if time_stamp == last_time_stamp:
-                        rospy.logerr("got same time_stamp twice! at: %s"%time_stamp)
-                    else:
-                        rospy.logdebug("time has passed! wow, we can at least trust this.")
-                    h.stamp = time_stamp
-                    rospy.logwarn_once("start_time that is actually used for header: %s"%time_stamp)
-
-                    msg_insole_msg = InsoleSensorStamped()
-
-                    ## now I need to publish it to the right side. 
-                    ## maybe this is wrong and I need to publish them both at the same time, but since I receive a message which is from either one side or the other, than the other side's info would be zero, so I didn't solve anything by doing this, I just pushed the problem further. At some point I need to remember which side is doing what. I can't rely on tf for this, so maybe I need to remember the latest values, update them here and publish both at the same time?
-
-
-                    t = TransformStamped()
-                    if side: ## or the other way around, needs checking
-                        h.frame_id = "right"
-                        t.child_frame_id = "right"
-                        x_axis_direction = 1
-                        t.header.frame_id = self.r_frame
-
-                    else:
-                        h.frame_id = "left"
-                        t.child_frame_id = "left"
-                        x_axis_direction = -1
-                        t.header.frame_id = self.l_frame
-                    msg_insole_msg.header = h
-
-                    pressure = 0
-                    force = 0
-                    cop = (0,0)
-                    if not msg_time:
-                        #rospy.logwarn("no time in message!")
-                        pass
-                    else:
-                        self.this_time[side] = msg_time
-                        if self.this_time[side] and self.last_time[side]:
-                            timediff = self.this_time[side] - self.last_time[side]   
-                            rospy.logdebug("time counter %d, time difference %d"%(self.this_time[side], timediff))
-                            tmsg =  Float32(timediff)
-                            self.ips.time[side].publish(tmsg)
-                            msg_insole_msg.time = tmsg
-                        self.last_time = deepcopy(self.this_time)
-                    if not msg_total_force:
-                        #rospy.logwarn("no total_force. not publishing force or wrench topics")
-                        pass
-                    else:
-                        fmsg = Float32(msg_total_force)
-                        try:
-                            self.ips.force[side].publish(fmsg)
-                        except Exception as e:
-                            rospy.logerr("total force looks like this: %s and I can't publish it!! %s"%(msg_total_force, e))
-                        force = Vector3(y=msg_total_force)
-                        wren = Wrench(force=force) #force, torque
-                        wmsg = WrenchStamped(h,wren)
-                        msg_insole_msg.force = fmsg 
-                        msg_insole_msg.wrench = wren
-                        self.ips.wrench[side].publish(wmsg)
-                    ## we also want to send a tf for the cop
-
-
-                    if not msg_cop:
-                        #rospy.logwarn_once("no cop. not publishing ...")
-                        pass
-                    else:
-                        #print("Issuign transforms")
-                        msg_insole_msg.cop.data = msg_cop
-                        cmsg = Common(h, msg_cop)
-                        self.ips.cop[side].publish(cmsg)
-                        t.header.stamp = time_stamp
-                        t.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
-                        t.transform.translation.y = self.foot_length*(msg_cop[0] + 0.5) 
-                        t.transform.translation.z = self.grf_origin_z_offset
-                        #t.transform.rotation.x = 0
-                        #t.transform.rotation.y = 0.707
-                        #t.transform.rotation.z = 0.707
-                        #t.transform.rotation.w = 0
-                        t.transform.rotation = OpenSimTf.rotation
-                        msg_insole_msg.ts = t
-                        if not t.header.frame_id:
-                            rospy.logerr("frame_id not set!")
-                        elif self.publish_transforms:
-                            self.broadcaster.sendTransform(t)
-
-            
-                    if not msg_press:
-                        #rospy.logwarn_once("no pressure data. not publishing")
-                        pass
-                    else:
-                        pmsg = Common(h, msg_press)
-                        self.ips.pressure[side].publish(pmsg)
-                        msg_insole_msg.pressure.data = msg_press
-                    if not msg_ang or not msg_acc:
-                        #rospy.logwarn_once("no angular or acceleration data. cannot publishing imu_msg")
-                        pass
-                    else:
-                        imsg = convert_to_imu(h, msg_ang, msg_acc)
-                        self.ips.imu[side].publish(imsg)
-                        msg_insole_msg.imu = imsg
-
-                    self.ips.insole[side].publish(msg_insole_msg)
-                    #toc_before_sleep_time = time.perf_counter()
-                    #print("Execution time %f ms"%(toc_before_sleep_time-tic)*1000)
+            self.started = False
+            self.time_stamp = None
+            self.last_time_stamp = None
+            while not rospy.is_shutdown() and self.getter.ok: ## we maybe want to rate limit this.
+                try:
+                    self.loop_once()
+                    #a = rospy.Time.now()
+                    #rospy.loginfo()
                     self.rate.sleep()
-                    last_time_stamp = time_stamp
-                    toc = time.perf_counter()
-                    self.execution_timer.publish((toc-tic)*1000)
-                    #rospy.loginfo(f"time it took to run over loop once {(toc - tic)*1000:0.4f} ms")
-                #raise rospy.ROSInterruptException("This is fine. It's the way to close this otherwise it will run forever.")
-                break
-            finally:
-                del self.getter
+                    #b = rospy.Time.now()
+#                    rospy.loginfo(b-a)
+                    #c = deepcopy(a)
+                    #if a == b:
+                     #   rospy.loginfo_once(self.rate)
+                    #    rospy.logerr("I am being lied to! rate sleep isn't sleeping!!!!")
+                except StopIteration:
+                    rospy.logwarn_once("I got a StopIteration exception, so I must have stopped. last published time: %s"%self.time_stamp)
+                    break
+            #do I need to do this?
+            del self.getter
+            break
