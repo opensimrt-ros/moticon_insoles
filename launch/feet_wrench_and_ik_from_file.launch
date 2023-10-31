@@ -5,7 +5,6 @@
 	<arg name="insole_freq" default="100" />
 	<arg name="static_pub_freq" default="100" />
 	<arg name="filename" 		default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
-	<arg name="publish_transforms" 	default="true"/>
 	<arg name="output_left" 	default="/grf_left/wrench"/>
 	<arg name="output_right" 	default="/grf_right/wrench"/>
 	<arg name="estimated_delay"	default="0"/>
@@ -26,30 +25,10 @@
 		<param name="grf_origin_z_offset" 			value="$(arg grf_origin_z_offset)"/>
 		<remap from="left/wrench" 	to="$(arg output_left)"/>
 		<remap from="right/wrench" 	to="$(arg output_right)"/>
-		<param name="publish_transforms" value="$(arg publish_transforms)"/>
 		<param name="start_time"				value="$(arg start_time)"/>
 	</node>
+	<include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/>
 
-	<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node_left" output="screen">
-		<param name="do_bias_estimation" value="true"/>
-		<param name="do_adaptive_gain" value="true"/>
-		<param name="use_mag" value="false"/>
-		<param name="gain_acc" value="0.01"/>
-		<param name="gain_mag" value="0.01"/>
-		<remap from="/imu/data_raw" to="/left/imu_raw" />
-		<remap from="/imu/data" to="/left/imu" />
-
-	</node>
-	<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node_right" output="screen">
-		<param name="do_bias_estimation" value="true"/>
-		<param name="do_adaptive_gain" value="true"/>
-		<param name="use_mag" value="false"/>
-		<param name="gain_acc" value="0.01"/>
-		<param name="gain_mag" value="0.01"/>
-		<remap from="/imu/data_raw" to="/right/imu_raw" />
-		<remap from="/imu/data" to="/right/imu" />
-
-	</node>
 	<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 calcn_l left $(arg static_pub_freq)" />
 	<node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 calcn_r right $(arg static_pub_freq)" /-->
 
