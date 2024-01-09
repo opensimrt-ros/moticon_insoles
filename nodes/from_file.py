@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from insoles_common.insole_srv import InsoleSrv
+from insoles_common.insole_data_from_file import InsoleDataFromFile
 from insoles_common import *
 import rospy
 

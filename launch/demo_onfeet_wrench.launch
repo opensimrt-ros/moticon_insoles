@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+	<arg name="name" 		default="openGo" />
+	<arg name="insole_freq" default="100" />
+	<arg name="static_pub_freq" default="25" />
+
+        <node pkg="moticon_insoles" type="from_sdk.py" 	name="moticon_insoles" output="screen">
+		<param name="name" 		value="$(arg name)" />
+		<param name="insole_rate" 		value="$(arg insole_freq)" />
+		<param name="foot_length" 				value="0.26"/>
+		<param name="foot_width" 				value="0.09"/>
+		<param name="left_cop_reference_frame" 			value="calcn_l" />
+		<param name="right_cop_reference_frame" 		value="calcn_r" />
+        </node>
+	<include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/>
+<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 map left $(arg static_pub_freq)" /-->
+<!--node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 map right $(arg static_pub_freq)" /-->
+
+<!-- left_foot right_foot  -->
+	<include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/>
+
+	<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
+		<!--param name="ignore_timestamp" value="true"/-->
+		<remap from="/joint_states" to="/model_generic/joint_states" />
+	</node>
+
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/human_2_wrenches.rviz" />
+	<!-- node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" / -->
+
+	<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
+		<arg name="freq" value="100"/>
+	</include>
+
+	<include file="$(find osrt_ros)/launch/custom_filtered.launch"/>
+
+</launch>
+
+

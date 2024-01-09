@@ -8,9 +8,13 @@
 	<arg name="simulation_loops" default="1" />
 	<arg name="start_at_secs" 		default="1668695818" />
 	<arg name="start_at_nsecs" 		default="327003000" />
+	<arg name="show_moveit" 		default="false"/>
 	<arg name="rviz_file"			default="$(find moticon_insoles)/human_2_wrenches.rviz" />
-
-	<node if="$(arg visualization)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" />
+	<include file="$(find moveit_human)/launch/ramp.launch" if="$(arg show_moveit)">
+		<remap from="/joint_states" to="/model_generic/joint_states" />
+		<arg name="use_rviz" value="true"/>
+		<arg name="rviz_file" value="$(find moveit_human)/launch/moveit_human.rviz"/>
+	</include>
 
 	<!-- left_foot right_foot  -->
         <node pkg="opensimrt_bridge" type="ik_dump" 	name="inverse_kinematics_from_file" output="screen">

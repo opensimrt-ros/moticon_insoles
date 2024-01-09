@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="moticon_insole">
+	<xacro:include filename="insoles.urdf.xacro" />
+	<xacro:insole_link insole_name="$(arg insole_name)" />
+
+</robot>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+	<rosparam file="/catkin_ws/tmp/02/config/ramp/moticon_insoles00.yaml" command="load" ns="moticon_insoles" />
+	
+	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen"/>
+	<!--include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/ -->
+
+	<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 calcn_l left $(arg static_pub_freq)" />
+	<node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 calcn_r right $(arg static_pub_freq)" /-->
+
+	<!-- left_foot right_foot  -->
+
+</launch>
+

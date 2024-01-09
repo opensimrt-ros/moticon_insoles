@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<launch>
+	<arg name="foot_left_name" default="calcn_l"/>
+	<arg name="foot_right_name" default="calcn_r"/>
+	<arg name="foot_distance_from_ground" default="0.03"/>
+	<arg name="insole_distance_from_foot" default="0.01"/>
+	<param name="robot_description" command="$(find xacro)/xacro $(find moticon_insoles)/urdf/robot_insoles.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name)"/>
+
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_test.rviz" />
+	<node pkg="tf" type="static_transform_publisher" name="insole_fixed_base_link_broadcaster" args="0 0 $(arg foot_distance_from_ground) 0 0 0 map base 10" />
+
+	<group ns="left">
+		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_link_broadcaster" args="-0.15 0 0 0 0 0 base $(arg foot_left_name) 10" />
+		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 $(arg foot_left_name) left_insole 10" />
+	</group>
+	<group ns="right">
+		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_link_broadcaster" args="0.15 0 0 0 0 0 base $(arg foot_right_name) 10" />
+		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 $(arg foot_right_name) right_insole 10" />
+	</group>
+
+</launch>

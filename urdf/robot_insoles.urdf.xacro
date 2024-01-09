@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="moticon_insole">
+	<xacro:include filename="insoles.urdf.xacro" />
+	<xacro:add_base base_name="base" left_name="$(arg left_name)" right_name="$(arg right_name)"/>
+	<xacro:insole_link_and_joint jtype="floating" parent="$(arg left_name)" origin="0 0 0" stl_name="moticon_insole_size6_left.stl" side="left"/>
+	<xacro:insole_link_and_joint jtype="floating" parent="$(arg right_name)" origin="0 0 0" stl_name="moticon_insole_size6_right.stl" side="right"/>
+
+</robot>

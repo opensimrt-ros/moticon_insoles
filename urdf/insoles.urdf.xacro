@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<xacro:macro name="add_base" params="base_name left_name right_name">
+		<link name="${base_name}"/>
+		<link name="${left_name}"/>
+		<link name="${right_name}"/>
+		<joint name="${left_name}_j" type="floating">
+			<origin xyz="0 0 0" rpy="0 0 0 "/>
+			<parent link="${base_name}"/>
+			<child link="${left_name}"/>
+		</joint>
+		<joint name="${right_name}_j" type="floating">
+			<origin xyz="0 0 0" rpy="0 0 0 "/>
+			<parent link="${base_name}"/>
+			<child link="${right_name}"/>
+		</joint>
+
+	</xacro:macro>
+	<xacro:macro name="insole_link" params="insole_name stl_name">
+		<link name="${insole_name}" >
+			<inertial>
+
+				<origin
+					xyz="0 0 0"
+					rpy="0 0 0" />
+				<mass
+					value="0.1" />
+				<inertia
+					ixx="1.0E-08"
+					ixy="1.0E-08"
+					ixz="1.0E-08"
+					iyy="1.0E-07"
+					iyz="1.0E-07"
+					izz="1.0E-07" />
+			</inertial>
+			<visual>
+				<origin
+					xyz="0 0 0"
+					rpy="0 0 0" />
+				<geometry>
+					<mesh
+						filename="package://moticon_insoles/meshes/${stl_name}" />
+				</geometry>
+				<material name="">
+					<color	rgba="0.92 0.2 0.2 1" />
+				</material>
+			</visual>
+			<collision>
+				<origin
+					xyz="0 0 0"
+					rpy="0 0 0" />
+				<geometry>
+					<mesh
+						filename="package://moticon_insoles/meshes/${stl_name}" />
+				</geometry>
+			</collision>
+		</link>
+	</xacro:macro>
+	<xacro:macro name="insole_joint" params="insole_name parent origin jtype">
+		<joint name="${insole_name}_joint" type="${jtype}">
+			<origin xyz="${origin}" rpy="0 0 0"/>
+			<parent link="${parent}"/>
+			<child link="${insole_name}"/>
+		</joint>
+	</xacro:macro>
+	<xacro:macro name="insole_link_and_joint" params="parent origin side stl_name jtype">
+		<xacro:insole_link insole_name="${side}_insole" stl_name="${stl_name}"/>
+		<xacro:insole_joint 
+			insole_name="${side}_insole" 
+			parent="${parent}" 
+			origin="${origin}"
+			jtype="${jtype}"/>
+	</xacro:macro>
+</robot>
