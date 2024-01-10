@@ -27,10 +27,15 @@ class InsoleDataFromSocket(InsoleDataGetter):
         return self.connection_ok
 
     def start_listening(self):
-        rospy.loginfo('Waiting for a connection...')
-        self.connection, client_address = self.sock.accept()
-        rospy.loginfo('Connection created.')
-        rospy.logdebug('client connected: {}'.format(client_address))
+        if self.ok:
+            rospy.loginfo('Waiting for a connection...')
+
+            self.connection, client_address = self.sock.accept()
+            rospy.loginfo('Connection created.')
+            rospy.logdebug('client connected: {}'.format(client_address))
+        else:
+            rospy.logfatal("I need to recreate the socket, maybe with new startup data. I haven't checked if it works yet, do not use")
+            raise(Exception)
 
     def get_data(self):
         msg = moticon_insoles.proto_s.MoticonMessage() ## maybe this can be outside the loop
@@ -48,6 +53,7 @@ class InsoleDataFromSocket(InsoleDataGetter):
         if msg_time == 0: ## we want to catch that weird message with Frame = 0
             ## this is actually a service start message with tons of interesting information that might help synchronize things better!
             self.parse_startup_message(msg)
+            return ## prevents start_time being set to zero when we have startup messages without timestamps.
         if not self.start_time:
             self.set_start_time()
         if not self.start_frame[side]:
@@ -65,8 +71,9 @@ class InsoleDataFromSocket(InsoleDataGetter):
         elif msg.data_message.side == 0:
             self.insole_startup_data[0].store_startup_data(msg)
 
-    def __del__(self):
+    def close(self):
         if self.connection:
             self.connection.close()
+            self.connection_ok = False
             rospy.loginfo("disconnected successfully.")
 

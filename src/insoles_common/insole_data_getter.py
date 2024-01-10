@@ -25,6 +25,6 @@ class InsoleDataGetter(ABC):
     def get_data(self):
         pass
     @abstractmethod
-    def __del__(self):
+    def close(self):
         pass
 

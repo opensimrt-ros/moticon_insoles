@@ -102,7 +102,7 @@ class InsoleSrv:
         framestart = self.getter.start_frame[side]
         if False:
             if side:
-                rospy.logwarn(f"\t\t\t{framestart}") 
+                rospy.logwarn(f"\t\t\t{framestart}") # logger_name="frame_start"
             else:
                 rospy.logwarn(f"\t{framestart}") 
 
@@ -118,7 +118,7 @@ class InsoleSrv:
 
         if False:
             if side:
-                rospy.loginfo(f"\t\t\t{insole_wall_time}") 
+                rospy.loginfo(f"\t\t\t{insole_wall_time}") ## use the ,logger_name="insole_wall_time"
             else:
                 rospy.loginfo(f"\t{insole_wall_time}") 
 
@@ -141,6 +141,7 @@ class InsoleSrv:
                     ##I started but got a none, so this means that I stopped?
                     self.started = False
                     rospy.logwarn("I think I have stopped. last published time: %s"%self.time_stamp)
+                    raise(StopIteration)
             return
         with self.mutex:
             if self.recording:
@@ -163,18 +164,19 @@ class InsoleSrv:
         self.ips.delay_publisher[side].publish(delay_msg)
 
 
-        t = TransformStamped()
-        if side: ## or the other way around, needs checking
-            h.frame_id = "right"
-            t.child_frame_id = "right"
-            x_axis_direction = 1
-            t.header.frame_id = self.r_frame
-        else:
-            h.frame_id = "left"
-            t.child_frame_id = "left"
-            x_axis_direction = -1
-            t.header.frame_id = self.l_frame
+        t = TransformStamped() # i dont need the time, but i need to have the child_frame_id
 
+        if side: ## or the other way around, needs checking
+            h.frame_id = self.r_frame
+            t.child_frame_id = "right_cop"
+            x_axis_direction = 1
+
+        else:
+            h.frame_id = self.l_frame
+            t.child_frame_id = "left_cop"
+            x_axis_direction = -1
+
+        t.header = h
         msg_insole_msg.header = h
 
         if msg_time:
@@ -189,16 +191,14 @@ class InsoleSrv:
         if msg_total_force:
             fmsg = Float32(msg_total_force)
             force = Vector3(y=msg_total_force)
-            wren = Wrench(force=force) #force, torque
-            wmsg = WrenchStamped(h,wren)
+            wren = Wrench(force=force) #force, torque)
             msg_insole_msg.force = fmsg 
             msg_insole_msg.wrench = wren
 
         if msg_cop:
             msg_insole_msg.cop.data = msg_cop
-            t.header.stamp = self.time_stamp
             t.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
-            t.transform.translation.y = self.foot_length*(msg_cop[0] + 0.5) 
+            t.transform.translation.y = self.foot_length/2*(msg_cop[0]) 
             t.transform.translation.z = self.grf_origin_z_offset
             t.transform.rotation = OpenSimTf.rotation
             msg_insole_msg.ts = t
@@ -236,5 +236,9 @@ class InsoleSrv:
                     #print("%f loop time\n\tloop+wait time:%f"%((toc1-tic,toc2-tic)))
                 except StopIteration:
                     rospy.logwarn_once("I got a StopIteration exception, so I must have stopped. last published time: %s"%self.time_stamp)
+                    self.getter.close()
                     break
-            break
+                except KeyboardInterrupt:
+                    rospy.loginfo("Goodbye!")
+                    self.getter.close()
+                    sys.exit(0)

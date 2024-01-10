@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+	<arg name="name" 		default="openGo" />
+	<arg name="insole_freq" default="100" />
+	<arg name="static_pub_freq" default="25" />
+
+        <node pkg="moticon_insoles" type="from_sdk.py" 	name="moticon_insoles" output="screen">
+		<param name="name" 		value="$(arg name)" />
+		<param name="insole_rate" 		value="$(arg insole_freq)" />
+		<param name="foot_length" 				value="0.26"/>
+		<param name="foot_width" 				value="0.09"/>
+		<param name="left_cop_reference_frame" 			value="left_insole" />
+		<param name="right_cop_reference_frame" 		value="right_insole" />
+        </node>
+	<include file="$(find moticon_insoles)/launch/imus_from_insole_madgwick.launch"/>
+	<!-- include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/ -->
+<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 map left $(arg static_pub_freq)" /-->
+<!--node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 map right $(arg static_pub_freq)" /-->
+
+<!-- left_foot right_foot  -->
+
+
+
+</launch>
+
+

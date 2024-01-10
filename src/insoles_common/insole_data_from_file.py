@@ -87,8 +87,9 @@ class InsoleDataFromFile(InsoleDataGetter):
         self.rate.sleep()
         return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
 
-    def __del__(self):
+    def close(self):
         #closes file
         if self.file:
             self.file.close()
+            rospy.loginfo("closed successfully.")
 

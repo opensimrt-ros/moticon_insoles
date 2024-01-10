@@ -5,18 +5,30 @@
 	<arg name="foot_right_name" default="calcn_r"/>
 	<arg name="foot_distance_from_ground" default="0.03"/>
 	<arg name="insole_distance_from_foot" default="0.01"/>
+	<arg name="ignore_insole_imu_for_vis"	default="true"/>
 	<param name="robot_description" command="$(find xacro)/xacro $(find moticon_insoles)/urdf/robot_insoles.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name)"/>
 
 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_test.rviz" />
+	<!-- 1, 2 represent the opensim model-->
+	<!-- 3 goes to the middle of the foot and is always a fixed transform from a bone in the foot and the center of that foot-->
+	<!-- 4 is representing an IMU and if enabled will be a fixed transform-->
+	<!-- 1 -->
 	<node pkg="tf" type="static_transform_publisher" name="insole_fixed_base_link_broadcaster" args="0 0 $(arg foot_distance_from_ground) 0 0 0 map base 10" />
 
 	<group ns="left">
-		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_link_broadcaster" args="-0.15 0 0 0 0 0 base $(arg foot_left_name) 10" />
-		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 $(arg foot_left_name) left_insole 10" />
+		<!-- 2 -->
+		<node pkg="tf" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="-0.15 0 0 0 0 0 base $(arg foot_left_name) 10" />
+		<!-- 3 -->
+		<node pkg="tf" type="static_transform_publisher" name="skelelton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_left_name) left_foot_center 10" />
+		<!-- 4 -->
+		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0.707 0.707 0 left_foot_center left_insole 10" />
 	</group>
 	<group ns="right">
-		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_link_broadcaster" args="0.15 0 0 0 0 0 base $(arg foot_right_name) 10" />
-		<node pkg="tf" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 $(arg foot_right_name) right_insole 10" />
+		<!-- this is pretending to be the right leg -->
+		<node pkg="tf" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="0.15 0 0 0 0 0 base $(arg foot_right_name) 10" />
+		<!-- this is always going to be present and should be a fixed transform from the calcaneus bone to the middle of the foot-->
+		<node pkg="tf" type="static_transform_publisher" name="skelelton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_right_name) right_foot_center 10" />
+		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0.707 0.707 0 right_foot_center right_insole 10" />
 	</group>
 
 </launch>
