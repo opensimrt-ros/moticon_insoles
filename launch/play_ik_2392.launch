@@ -9,6 +9,9 @@
 	<arg name="start_at_secs" 		default="1668695818" />
 	<arg name="start_at_nsecs" 		default="327003000" />
 	<arg name="rviz_file"			default="$(find moticon_insoles)/human_2_wrenches.rviz" />
+	
+	<arg name="foot_left_name" default="calcn_l"/>
+	<arg name="foot_right_name" default="calcn_r"/>
 
 	<node if="$(arg visualization)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" />
 
@@ -42,7 +45,8 @@
 
         </node>
 
-	<include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/>
+	<!--include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/ -->
+	<param name="robot_description" command="$(find xacro)/xacro $(find test_moticon_insoles)/human_with_ximus_and_insole.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name)"/>
 
 	<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
 		<!--param name="ignore_timestamp" value="true"/-->

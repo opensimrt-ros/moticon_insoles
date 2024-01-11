@@ -6,8 +6,8 @@ import os
 import rospy
 import csv
 
-from insole_data_getter import InsoleDataGetter
-from better_rate import BetterRate
+from insoles_common.insole_data_getter import InsoleDataGetter
+from insoles_common.better_rate import BetterRate
 
 class InsoleDataFromFile(InsoleDataGetter):
     """Data from file class"""
@@ -38,13 +38,13 @@ class InsoleDataFromFile(InsoleDataGetter):
         self.set_start_time() ## this is a bit different from live and file, but I think it is okay.
         #print(self.data)
         for row in self.data:
-            if row["side"] == "0":
+            if row["side"] == "0" and not self.start_frame[0]:
                 self.start_frame[0] = int(row["Frame"])
-                break
-        for row in self.data:
-            if row["side"] == "1":
+            if row["side"] == "1" and not self.start_frame[1]:
                 self.start_frame[1] = int(row["Frame"])
-        print(self.start_frame)
+            if self.start_frame[0] and self.start_frame[1]:
+                break
+        print(f"start_frame from insoles: {self.start_frame}")
         self.reader = iter(self.data)
         #print(next(self.reader))
 
@@ -91,5 +91,6 @@ class InsoleDataFromFile(InsoleDataGetter):
         #closes file
         if self.file:
             self.file.close()
+            self.filename = None # prevents for running many times  
             rospy.loginfo("closed successfully.")
 

@@ -68,24 +68,156 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         calcn_l:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         calcn_r:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        femur_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        femur_l_f1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        femur_l_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        femur_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        femur_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        femur_r_f1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        femur_r_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        femur_r_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         left_insole:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        pelvis:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pelvis_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         right_insole:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        subject_opensim:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        talus_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        talus_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        talus_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        talus_r_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tibia_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tibia_l_f1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tibia_l_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tibia_l_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tibia_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        tibia_r_f1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tibia_r_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        tibia_r_imu:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        toes_l:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        toes_r:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso_f1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        torso_f2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        torso_imu:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -97,36 +229,12 @@ Visualization Manager:
       Value: true
       Visual Enabled: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Filter (blacklist): ""
       Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base:
-          Value: true
-        calcn_l:
-          Value: true
-        calcn_r:
-          Value: true
-        left_cop:
-          Value: true
-        left_cop_filtered:
-          Value: true
-        left_foot_center:
-          Value: true
-        left_insole:
-          Value: true
-        map:
-          Value: true
-        right_cop:
-          Value: true
-        right_cop_filtered:
-          Value: true
-        right_foot_center:
-          Value: true
-        right_insole:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -134,24 +242,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map:
-          base:
-            calcn_l:
-              left_foot_center:
-                left_insole:
-                  left_cop:
-                    {}
-                  left_cop_filtered:
-                    {}
-            calcn_r:
-              right_foot_center:
-                right_insole:
-                  right_cop:
-                    {}
-                  right_cop_filtered:
-                    {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz_plugin_tutorials/Imu
       Color: 204; 51; 204
@@ -230,7 +323,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.7663763165473938
+      Distance: 2.268181324005127
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -238,17 +331,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: 0.11126028746366501
+        Y: 0.011037502437829971
+        Z: 0.30171525478363037
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4453980028629303
+      Pitch: 0.6553964018821716
       Target Frame: <Fixed Frame>
-      Yaw: 2.2085962295532227
+      Yaw: 0.9685903787612915
     Saved: ~
 Window Geometry:
   Displays:
@@ -267,4 +360,4 @@ Window Geometry:
     collapsed: false
   Width: 1440
   X: 2049
-  Y: 148
+  Y: 122
