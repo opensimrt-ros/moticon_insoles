@@ -23,6 +23,42 @@ class InsoleDataFromFile(InsoleDataGetter):
         self.rate = BetterRate(node_freq) ## if we read at 100 hertz from 2 sensors this should be enough?
         self.sensors =["P%d"%sensor for sensor in range(1,17)] 
     
+        ###
+
+        self.use_synchronization_event = rospy.get_param("~use_synchronization_event", default=False)
+
+    def set_start_time_from_sync_event(self):
+        """
+            This is a bit tricky. 
+
+            I will calculate what would have been the starting frame for each side based on the start_time and the
+            known time in the past where each insole was known to have been synchronized. 
+
+
+        """
+        rsecs = rospy.get_param("~rsecs")
+        rnsecs = rospy.get_param("~rnsecs")
+        rto = rospy.get_param("~rto")
+        
+        lsecs = rospy.get_param("~lsecs")
+        lnsecs = rospy.get_param("~lnsecs")
+        lto = rospy.get_param("~lto")
+
+        insole_sync_secs = [lsecs, rsecs]
+        insole_sync_nsecs = [lnsecs, rnsecs]
+        insole_sync_to = [lto, rto]
+
+        for i in [0,1]:
+            this_side_sync_time = rospy.Time()
+            this_side_sync_time.set(insole_sync_secs[i],insole_sync_nsecs[i])
+            ## caveat, the start_time should be larger than the sync time
+            start_time_time = rospy.Time.from_sec(self.start_time)
+           
+           ## this is a duration
+            elapsed_frames_this_side = (start_time_time - this_side_sync_time).to_sec()*1000
+            self.start_frame[i] = insole_sync_to[i] + int(elapsed_frames_this_side)
+
+
     def set_start_time(self):
         """ Default start_time is zero """
         self.start_time = rospy.get_param("~start_time", default=0)
@@ -37,13 +73,20 @@ class InsoleDataFromFile(InsoleDataGetter):
             self.data.append(row)
         self.set_start_time() ## this is a bit different from live and file, but I think it is okay.
         #print(self.data)
-        for row in self.data:
-            if row["side"] == "0" and not self.start_frame[0]:
-                self.start_frame[0] = int(row["Frame"])
-            if row["side"] == "1" and not self.start_frame[1]:
-                self.start_frame[1] = int(row["Frame"])
-            if self.start_frame[0] and self.start_frame[1]:
-                break
+        ### default, if there isnt any problem, this should work.
+
+        if self.use_synchronization_event:
+            rospy.logwarn("using EXT sync event from params")
+            self.set_start_time_from_sync_event()
+        else:
+            rospy.loginfo("Using first frame as sync event")
+            for row in self.data:
+                if row["side"] == "0" and not self.start_frame[0]:
+                    self.start_frame[0] = int(row["Frame"])
+                if row["side"] == "1" and not self.start_frame[1]:
+                    self.start_frame[1] = int(row["Frame"])
+                if self.start_frame[0] and self.start_frame[1]:
+                    break
         print(f"start_frame from insoles: {self.start_frame}")
         self.reader = iter(self.data)
         #print(next(self.reader))

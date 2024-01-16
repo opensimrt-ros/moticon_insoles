@@ -14,6 +14,15 @@
 	<arg name="foot_right_name" default="calcn_r"/>
 	<arg name="insole_distance_from_foot" default="0.01"/>
 	<arg name="ignore_insole_imu_for_vis"	default="true"/>
+
+	<arg name="use_synchronization_event"				default="false"/>
+	<arg name="rsecs"				default=""/>
+	<arg name="rnsecs"				default=""/>
+	<arg name="rto"				default=""/>
+	<arg name="lsecs"				default=""/>
+	<arg name="lnsecs"				default=""/>
+	<arg name="lto"				default=""/>
+
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
@@ -26,6 +35,14 @@
 		<param name="filename" 					value="$(arg filename)"/>
 		<param name="grf_origin_z_offset" 			value="$(arg grf_origin_z_offset)"/>
 		<param name="start_time"				value="$(arg start_time)"/>
+		<param name="use_synchronization_event"			value="$(arg use_synchronization_event)"/>
+
+		<param name="rsecs"	 value="$(arg rsecs)"	/>
+		<param name="rnsecs"	 value="$(arg rnsecs)"	/>
+		<param name="rto"	 value="$(arg rto)"		/>
+		<param name="lsecs"	 value="$(arg lsecs)"	/>
+		<param name="lnsecs"	 value="$(arg lnsecs)"	/>
+		<param name="lto"	 value="$(arg lto)"		/>	
 	</node>
 	<include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/>
 	
