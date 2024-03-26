@@ -3,17 +3,12 @@
 
 	<arg name="name" 		default="openGo" />
 	<arg name="insole_freq" default="100" />
-	<arg name="static_pub_freq" default="100" />
 	<arg name="filename" 		default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
 	<arg name="estimated_delay"	default="0"/>
-	<arg name="foot_length" 	default="0.26"/>
-	<arg name="foot_width" 		default="0.09"/>
+	<arg name="foot_length" 	default="0.2742"/>
+	<arg name="foot_width" 		default="0.0975"/>
 	<arg name="grf_origin_z_offset" default="0.0"/>
 	<arg name="start_time"		default="0.0"/>
-	<arg name="foot_left_name" default="calcn_l"/>
-	<arg name="foot_right_name" default="calcn_r"/>
-	<arg name="insole_distance_from_foot" default="0.01"/>
-	<arg name="ignore_insole_imu_for_vis"	default="true"/>
 
 	<arg name="use_synchronization_event"				default="false"/>
 	<arg name="rsecs"				default=""/>
@@ -23,11 +18,12 @@
 	<arg name="lnsecs"				default=""/>
 	<arg name="lto"				default=""/>
 
+	<arg name="tf_prefix" 				default="ik/"/>
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
-		<param name="left_cop_reference_frame" 			value="left_insole" />
-		<param name="right_cop_reference_frame" 		value="right_insole" />
+		<param name="left_cop_reference_frame" 			value="$(arg tf_prefix)left_insole" />
+		<param name="right_cop_reference_frame" 		value="$(arg tf_prefix)right_insole" />
 		<param name="foot_length" 				value="$(arg foot_length)"/>
 		<param name="foot_width" 				value="$(arg foot_width)"/>
 		<param name="wait_for_trigger" 				value="true"/>
@@ -46,26 +42,6 @@
 	</node>
 	<include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/>
 	
-
-	<group ns="left">
-		<!-- 2 -->
-		<!-- 3 -->
-		<node pkg="tf" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_left_name) left_foot_center 10" />
-		<!-- 4 -->
-		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 left_foot_center left_insole 10" />
-	</group>
-	<group ns="right">
-		<!-- this is pretending to be the right leg -->
-		<!-- this is always going to be present and should be a fixed transform from the calcaneus bone to the middle of the foot-->
-		<node pkg="tf" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_right_name) right_foot_center 10" />
-		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 right_foot_center right_insole 10" />
-	</group>
-
-	<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 calcn_l left $(arg static_pub_freq)" />
-	<node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 calcn_r right $(arg static_pub_freq)" /-->
-
-	<!-- left_foot right_foot  -->
-
 </launch>
 
 

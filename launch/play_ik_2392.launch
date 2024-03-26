@@ -9,58 +9,92 @@
 	<arg name="start_at_secs" 		default="1668695818" />
 	<arg name="start_at_nsecs" 		default="327003000" />
 	<arg name="rviz_file"			default="$(find moticon_insoles)/human_2_wrenches.rviz" />
-	
+
 	<arg name="foot_left_name" default="calcn_l"/>
 	<arg name="foot_right_name" default="calcn_r"/>
 
 	<node if="$(arg visualization)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rviz_file)" />
 
-	<!-- left_foot right_foot  -->
-        <node pkg="opensimrt_bridge" type="ik_dump" 	name="inverse_kinematics_from_file" output="screen">
-		<param name="ik_file" 			value="$(arg filename)" />
-                <param name="model_file" 		value="$(arg model_file)" />
-                <param name="remove_n_last_rows" 	value="0" />
-                <param name="simulation_loops" 		value="$(arg simulation_loops)" />
-                <param name="resample_period" 		value="0.01" />
-		<!-- maybe you want to run this node slower than the resampling period to give a lot of time between messages for the other algorithms to run. Otherwise this number should be one -->
-		<param name="rate_divider" 		value="1" />
+	<arg name="show_id_skel" default="false"/>
 
-		<param name="start_at_secs" 		value="$(arg start_at_secs)" />
-		<param name="start_at_nsecs" 		value="$(arg start_at_nsecs)" />
-		<param name="stop_at_secs" 		value="1768695818" />
-		<param name="stop_at_nsecs" 		value="0" />
+	<group ns="ik">
 
-		<!-- Filter values for filtered output -->
-		<param name="filter_output" 		value="true" />
-		<param name="memory" 			value="35" />
-		<param name="cutoff_freq" 		value="6" />
-		<param name="delay" 			value="14" />
-		<param name="spline_order" 		value="3" />
+		<!-- left_foot right_foot  -->
+		<node pkg="opensimrt_bridge" type="ik_dump" 	name="inverse_kinematics_from_file" output="screen">
+			<param name="ik_file" 			value="$(arg filename)" />
+			<param name="model_file" 		value="$(arg model_file)" />
+			<param name="remove_n_last_rows" 	value="0" />
+			<param name="simulation_loops" 		value="$(arg simulation_loops)" />
+			<param name="resample_period" 		value="0.01" />
+			<!-- maybe you want to run this node slower than the resampling period to give a lot of time between messages for the other algorithms to run. Otherwise this number should be one -->
+			<param name="rate_divider" 		value="1" />
 
-		<remap from="/inverse_kinematics_from_file/output" to="/ik/output"/>
-		<remap from="/inverse_kinematics_from_file/output_filtered" to="/ik/output_filtered"/>
-		<remap from="/inverse_kinematics_from_file/out_labels" to="/ik/outlabels"/>
-		
-		<param name="async_run" 			value="false"/>
+			<param name="start_at_secs" 		value="$(arg start_at_secs)" />
+			<param name="start_at_nsecs" 		value="$(arg start_at_nsecs)" />
+			<param name="stop_at_secs" 		value="1768695818" />
+			<param name="stop_at_nsecs" 		value="0" />
 
-        </node>
+			<!-- Filter values for filtered output -->
+			<param name="filter_output" 		value="true" />
+			<param name="memory" 			value="35" />
+			<param name="cutoff_freq" 		value="6" />
+			<param name="delay" 			value="14" />
+			<param name="spline_order" 		value="3" />
 
-	<!--include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/ -->
-	<param name="robot_description" command="$(find xacro)/xacro $(find test_moticon_insoles)/human_with_ximus_and_insole.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name)"/>
+			<param name="async_run" 			value="false"/>
+			<rosparam param="exclude_list" >['hip_adduction_l','hip_rotation_l','hip_adduction_r','hip_rotation_r']</rosparam>
 
-	<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
-		<!--param name="ignore_timestamp" value="true"/-->
-		<remap from="/joint_states" to="/model_generic/joint_states" />
-	</node>
+		</node>
 
-	<!-- node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" / -->
+		<!--include file="$(find gait1992_description)/launch/load_generated_urdf_ximus.launch"/ -->
 
-	<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
-		<arg name="freq" value="100"/>
-	</include>
+		<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
+			<param name="tf_prefix" value="ik"/>
+			<!--param name="ignore_timestamp" value="true"/-->
+			<remap from="robot_description" to="ik_description" />
+			<remap from="/joint_states" to="/model_generic/joint_states" />
+		</node>
 
-	<include file="$(find osrt_ros)/launch/custom_filtered.launch"/>
+		<!-- node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" / -->
 
+		<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
+			<arg name="tf_prefix" value="ik/"/>
+			<arg name="freq" value="100"/>
+		</include>
+
+		<include file="$(find moticon_insoles)/launch/insole_tfs.launch">
+			<arg name="tf_prefix" value="ik/"/>
+		</include>
+		<include file="$(find osrt_ros)/launch/custom_filtered.launch"/>
+	</group>
+	<group ns="id" if="$(arg show_id_skel)">
+		<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
+			<param name="tf_prefix" value="id"/>
+			<!--param name="ignore_timestamp" value="true"/-->
+			<remap from="robot_description" to="id_description" />
+			<remap from="/joint_states" to="/model_generic/joint_states" />
+		</node>
+
+		<!-- node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file /catkin_ws/src/gait1992_description/description/model_generic/model_generic_aCol.urdf -urdf -x 0 -y 0 -z 2 -model model_generic" / -->
+
+		<include file="$(find gait1992_description)/launch/feet_missing_tfs_publisher.launch">
+			<arg name="tf_prefix" value="id/"/>
+			<arg name="freq" value="100"/>
+		</include>
+		<include file="$(find moticon_insoles)/launch/insole_tfs.launch">
+			<arg name="tf_prefix" value="id/"/>
+		</include>
+
+		<include file="$(find osrt_ros)/launch/custom_filtered.launch">
+			<arg name="tf_prefix" value="id/"/>
+			<!--arg name="in" value="/ik/output_filtered"/ -->
+			<arg name="in_sync" value="/id_node/output_multi"/>
+			<arg name="in_labels" value="/ik/out_labels"/>
+		</include>
+
+	</group>
+	<param name="id_description" if="$(arg show_id_skel)" command="$(find xacro)/xacro $(find test_moticon_insoles)/human_with_ximus_and_insole.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name) color:=0.1"/>
+	<param name="ik_description" command="$(find xacro)/xacro $(find test_moticon_insoles)/human_with_ximus_and_insole.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name) color:=1.1"/>
 </launch>
 
 

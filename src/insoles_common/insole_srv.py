@@ -20,6 +20,7 @@ class InsoleSrv:
         self.savedict_list = []
         self.savefile_name = "/tmp/insole.txt"
         self.mutex = Lock()
+        self.debug_flip = 1
 
     def init(self):
         rospy.logwarn("TODO: using informed insole_rate as param! this is less than ideal and can lead to errors. read it from the insole setup message instead ")
@@ -132,9 +133,14 @@ class InsoleSrv:
                 return
 
         response = self.getter.get_data()
-        if response and len(response) == 7:
-            msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
-            self.started = True
+        if response:
+            if len(response) == 7:
+                msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
+                self.started = True
+            else:
+                ## we are receiving one of those status messages, i think. 
+                ## I should probably do something with this information, however currently I will just log it
+                rospy.logwarn(f"NOT IMPLEMENTED: Received status response from insole, but I don't know what to do with this information\n{response}")
         else:
             with self.mutex:
                 if self.started:
@@ -197,9 +203,15 @@ class InsoleSrv:
 
         if msg_cop:
             msg_insole_msg.cop.data = msg_cop
-            t.transform.translation.x = self.foot_width/2*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
-            t.transform.translation.y = self.foot_length/2*(msg_cop[0]) 
+            t.transform.translation.x = -self.foot_width*(msg_cop[1])*x_axis_direction ### need to check these because I am rotating them with the static transform afterwards...
+            t.transform.translation.y = self.foot_length*(msg_cop[0]) 
             t.transform.translation.z = self.grf_origin_z_offset
+
+            if False:
+                #t.transform.translation.x = 0.4*x_axis_direction
+                t.transform.translation.x = self.foot_width/2*x_axis_direction #*self.debug_flip
+                t.transform.translation.y = -self.foot_length/2 
+                t.transform.translation.z = 0 #self.grf_origin_z_offset
             t.transform.rotation = OpenSimTf.rotation
             msg_insole_msg.ts = t
 
@@ -211,6 +223,7 @@ class InsoleSrv:
 
         self.ips.insole[side].publish(msg_insole_msg)
         self.last_time_stamp = deepcopy(self.time_stamp)
+        self.debug_flip = -self.debug_flip
 
     def run_server(self, ):
 

@@ -29,9 +29,13 @@ class BetterRate:
         time_now = rospy.Time.now()
         with self.mutex:
             local_initial_time = self.initial_time
-        running_time = time_now - local_initial_time
-        ## measure if we are running late 
-        running_frequency = self.ticks/running_time.to_sec() 
+        running_time = (time_now - local_initial_time).to_sec()
+        if running_time == 0:
+            rospy.logwarn("Running time is zero?!?")
+            running_frequency = 10000
+        else:
+            ## measure if we are running late 
+            running_frequency = self.ticks/running_time 
         #rospy.loginfo(f"\ninitial_time: {self.initial_time}\nlocal_initial_time:{local_initial_time}\ntime_now= {time_now}\nrunning_time:{running_time}\nrunning_frequency: {running_frequency} ")
         if float(running_frequency) < self.frequency_slow:
             self.freq_fast_rate.sleep()
