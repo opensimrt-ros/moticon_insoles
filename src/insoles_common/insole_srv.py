@@ -3,6 +3,7 @@ print(f"Loaded {__file__}")
 
 import rospy
 from std_msgs.msg import Header, Float32
+from diagnostic_msgs.msg import DiagnosticStatus, DiagnosticArray
 from std_srvs.srv import Empty, EmptyResponse
 from opensimrt_msgs.srv import SetFileNameSrv, SetFileNameSrvResponse
 from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped, Transform
@@ -46,6 +47,7 @@ class InsoleSrv:
             # let's publish the measured delay
             self.ips.delay_publisher[i] = rospy.Publisher(side+'/delay',Float32, queue_size=1)
 
+        self.diagspub = rospy.Publisher('/diagnostics', DiagnosticArray, queue_size=10)
         self.last_time = [None,None] ## left and right have different counters!
         self.this_time = [None,None]
 
@@ -127,6 +129,7 @@ class InsoleSrv:
     
     def loop_once(self):
         rospy.logdebug("Inner loop listening")
+        diag_msg_array = DiagnosticArray()
         with self.mutex:
             if self.waiting:
                 rospy.logwarn_once("waiting...")
@@ -166,7 +169,18 @@ class InsoleSrv:
 
         #
         delay_msg = Float32()
-        delay_msg.data = self.get_frame_delay(msg_time,side)
+        
+        diags_time = DiagnosticStatus()
+        diags_time.name = "insole_%s"%('right' if side else 'left')
+        diags_time.hardware_id = "some_hardware_id_%s"%('r' if side else 'l')
+        time_delay_for_frame = self.get_frame_delay(msg_time,side)
+        diags_time.message = f"Frame delay is {time_delay_for_frame}s."
+        if (time_delay_for_frame>1): # this time should be in seconds
+            diags_time.level = diags_time.STALE
+        else:
+            diags_time.level = diags_time.OK
+        diag_msg_array.status.append(diags_time)
+        delay_msg.data = time_delay_for_frame
         self.ips.delay_publisher[side].publish(delay_msg)
 
 
@@ -224,6 +238,7 @@ class InsoleSrv:
         self.ips.insole[side].publish(msg_insole_msg)
         self.last_time_stamp = deepcopy(self.time_stamp)
         self.debug_flip = -self.debug_flip
+        self.diagspub.publish(diag_msg_array)
 
     def run_server(self, ):
 

@@ -6,13 +6,14 @@
 	<arg name="static_pub_freq" default="25" />
 
 	<arg name="use_imus"		default="true"/>
+	<arg name="tf_prefix" default=""/>
         <node pkg="moticon_insoles" type="from_sdk.py" 	name="moticon_insoles" output="screen">
 		<param name="name" 		value="$(arg name)" />
 		<param name="insole_rate" 		value="$(arg insole_freq)" />
 		<param name="foot_length" 				value="0.26"/>
 		<param name="foot_width" 				value="0.09"/>
-		<param name="left_cop_reference_frame" 			value="left_insole" />
-		<param name="right_cop_reference_frame" 		value="right_insole" />
+		<param name="left_cop_reference_frame" 			value="$(arg tf_prefix)left_insole" />
+		<param name="right_cop_reference_frame" 		value="$(arg tf_prefix)right_insole" />
         </node>
 	
 	<!-- The settings for the madgwick imu are not properly set. it already publishes a tf (maybe the imus from insole also does,,, fix!-->

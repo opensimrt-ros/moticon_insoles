@@ -105,7 +105,7 @@ class InsoleDataFromSocket(InsoleDataGetter):
 
         else:
             rospy.logerr(f"even stranger than expected message received, please check for this type as well {msg}")
-        return -1
+        return 
 
     def parse_startup_message(self, msg):
         if msg.data_message.side == 1:
