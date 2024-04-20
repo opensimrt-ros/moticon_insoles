@@ -3,7 +3,7 @@
 
 	<arg name="name" 		default="openGo" />
 	<arg name="insole_freq" default="100" />
-	<arg name="filename" 		default="/catkin_ws/Data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
+	<arg name="filename" 		default="/srv/host_data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
 	<arg name="estimated_delay"	default="0"/>
 	<arg name="foot_length" 	default="0.2742"/>
 	<arg name="foot_width" 		default="0.0975"/>
