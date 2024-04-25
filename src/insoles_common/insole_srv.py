@@ -51,10 +51,11 @@ class InsoleSrv:
         self.last_time = [None,None] ## left and right have different counters!
         self.this_time = [None,None]
 
-        self.s = rospy.Service('~record', Empty, self.turn_on_recording)
-        self.s1 = rospy.Service('~stop', Empty, self.turn_off_recording)
-        self.s2 = rospy.Service('~save', Empty, self.save)
-        self.s3 = rospy.Service('~setfilename', SetFileNameSrv, self.setfilename)
+        self.s = rospy.Service('~start_recording', Empty, self.turn_on_recording)
+        self.s1 = rospy.Service('~stop_recording', Empty, self.turn_off_recording)
+        ## it isnt a sto, but we can use the same names as the saver_node then everything gets easier
+        self.s2 = rospy.Service('~write_sto', Empty, self.save)
+        self.s3 = rospy.Service('~set_name_and_path', SetFileNameSrv, self.setfilename)
         self.s4 = rospy.Service('~clear', Empty, self.clear)
         self.s5 = rospy.Service('~start_playback', Empty, self.startplayback)
 
@@ -137,8 +138,8 @@ class InsoleSrv:
 
         response = self.getter.get_data()
         if response:
-            if len(response) == 7:
-                msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
+            if len(response) == 8:
+                msg, msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
                 self.started = True
             else:
                 ## we are receiving one of those status messages, i think. 

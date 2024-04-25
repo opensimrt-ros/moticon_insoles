@@ -128,7 +128,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         msg_acc             = get_prop(["acc1","acc2","acc3"]) 
         msg_pres            = get_prop(self.sensors) # P1...P16
         self.rate.sleep()
-        return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
+        return None, msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
 
     def close(self):
         #closes file

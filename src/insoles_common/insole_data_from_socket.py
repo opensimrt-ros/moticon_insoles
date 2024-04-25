@@ -87,7 +87,7 @@ class InsoleDataFromSocket(InsoleDataGetter):
             msg_ang = msg.data_message.angular
             msg_acc = msg.data_message.acceleration
             msg_pres = msg.data_message.pressure
-            return msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
+            return msg, msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
         ## UNTESTED, from what I understand every moticon message has all of these fields, i wonder if parse from string removes them
         ## if not, then this too will not work
         elif msg.HasField("insole_info"):
