@@ -44,6 +44,23 @@ class InsoleDataFromFile(InsoleDataGetter):
         lnsecs = rospy.get_param("~lnsecs")
         lto = rospy.get_param("~lto")
 
+        ## but maybe I want to set this with differential times, like start_time + (ls,rs)
+
+        if rospy.has_param("~diff_time"): ## should be a dict like {"left":(delta_lsecs,delta_lnsecs),"right":...}
+            if self.start_time == 0:
+                rospy.logfatal("Wrong usage. If using differential time, start_time should be set to something different from zero");
+            elif self.start_time < rospy.Time.now().to_sec():
+                rospy.logwarn("start_time is in the past!!!")
+            diff_time = rospy.get_param("~diff_time")
+            start_time_s = int(self.start_time)
+            start_time_ns = int((self.start_time-start_time_s)*1e9)
+            drsecs, drnsecs = rospy.get_param("diff_time")["right"]
+            dlsecs, dlnsecs = rospy.get_param("diff_time")["left"]
+            lsecs = dlsecs + start_time_s
+            lnsecs = dlnsecs + start_time_ns
+            rsecs = drsecs + start_time_s
+            rnsecs = drnsecs + start_time_ns
+
         insole_sync_secs = [lsecs, rsecs]
         insole_sync_nsecs = [lnsecs, rnsecs]
         insole_sync_to = [lto, rto]
@@ -65,6 +82,10 @@ class InsoleDataFromFile(InsoleDataGetter):
         
     def start_listening(self):
         #maybe opens file and we have a getline thing going
+        if not self.filename:
+            rospy.logwarn_throttle(30,"No file is set. I should probably close")
+            rospy.sleep(0.1)
+            return
         print(self.filename)
         self.file = open(self.filename, "r")
         ## maybe file operations are too slow to be executed inside the loop. let's test this out
@@ -134,6 +155,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         #closes file
         if self.file:
             self.file.close()
+            self.file = None
             self.filename = None # prevents for running many times  
             rospy.loginfo("closed successfully.")
 

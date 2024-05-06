@@ -246,7 +246,6 @@ class InsoleSrv:
         while not rospy.is_shutdown(): ## maybe while ros ok
             rospy.loginfo_once("Will start listening")
             self.getter.start_listening()
-            rospy.logwarn("################### start_time from getter: %s"%self.getter.start_time)
             with self.mutex:
                 self.started = False
             self.time_stamp = None
@@ -254,6 +253,9 @@ class InsoleSrv:
             if not self.getter.ok:
                 rospy.sleep(0.001) 
                 continue
+            else:
+                rospy.logwarn("################### start_time from getter: %s"%self.getter.start_time)
+
             while not rospy.is_shutdown() and self.getter.ok: ## we maybe want to rate limit this.
                 try:
                     #tic = time.time()
