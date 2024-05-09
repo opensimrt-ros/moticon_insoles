@@ -17,6 +17,8 @@
 	<arg name="lsecs"				default=""/>
 	<arg name="lnsecs"				default=""/>
 	<arg name="lto"				default=""/>
+	
+	<arg name="diff_time"				default=""/>
 
 	<arg name="tf_prefix" 				default="ik/"/>
 	<node pkg="moticon_insoles" type="from_file.py" 	name="moticon_insoles" output="screen">
@@ -39,6 +41,9 @@
 		<param name="lsecs"	 value="$(arg lsecs)"	/>
 		<param name="lnsecs"	 value="$(arg lnsecs)"	/>
 		<param name="lto"	 value="$(arg lto)"		/>	
+		
+
+		<rosparam param="diff_time"  subst_value="True">$(arg diff_time)</rosparam>
 	</node>
 	<include file="$(find moticon_insoles)/launch/imus_from_insole.launch"/>
 	

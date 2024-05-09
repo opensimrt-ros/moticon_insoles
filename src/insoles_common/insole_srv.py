@@ -106,9 +106,9 @@ class InsoleSrv:
         framestart = self.getter.start_frame[side]
         if False:
             if side:
-                rospy.logwarn(f"\t\t\t{framestart}") # logger_name="frame_start"
+                rospy.logwarn(f"\n\t\t\t{framestart}\n\t\t\t{frame_count-framestart}") # logger_name="frame_start"
             else:
-                rospy.logwarn(f"\t{framestart}") 
+                rospy.logwarn(f"\n\t{framestart}\n\t{frame_count-framestart}") 
 
         return (frame_count - self.getter.start_frame[side])/1000.
 

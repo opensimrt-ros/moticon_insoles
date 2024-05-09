@@ -24,6 +24,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         self.sensors =["P%d"%sensor for sensor in range(1,17)] 
     
         ###
+        self.initialized = False
 
         self.use_synchronization_event = rospy.get_param("~use_synchronization_event", default=False)
 
@@ -51,15 +52,18 @@ class InsoleDataFromFile(InsoleDataGetter):
                 rospy.logfatal("Wrong usage. If using differential time, start_time should be set to something different from zero");
             elif self.start_time < rospy.Time.now().to_sec():
                 rospy.logwarn("start_time is in the past!!!")
+            rospy.logwarn("Using diff_time!")
             diff_time = rospy.get_param("~diff_time")
             start_time_s = int(self.start_time)
             start_time_ns = int((self.start_time-start_time_s)*1e9)
-            drsecs, drnsecs = rospy.get_param("diff_time")["right"]
-            dlsecs, dlnsecs = rospy.get_param("diff_time")["left"]
+            drsecs, drnsecs = diff_time["right"]
+            dlsecs, dlnsecs = diff_time["left"]
             lsecs = dlsecs + start_time_s
             lnsecs = dlnsecs + start_time_ns
             rsecs = drsecs + start_time_s
             rnsecs = drnsecs + start_time_ns
+            lto, rto = self.get_initial_frame()
+
 
         insole_sync_secs = [lsecs, rsecs]
         insole_sync_nsecs = [lnsecs, rnsecs]
@@ -76,11 +80,26 @@ class InsoleDataFromFile(InsoleDataGetter):
             self.start_frame[i] = insole_sync_to[i] + int(elapsed_frames_this_side)
 
 
+    def get_initial_frame(self):
+        left_zero_frame =  None
+        right_zero_frame = None
+        rospy.loginfo("Using first frame as sync event")
+        for row in self.data:
+            if row["side"] == "0" and not left_zero_frame:
+                left_zero_frame = int(row["Frame"])
+            if row["side"] == "1" and not right_zero_frame:
+                right_zero_frame = int(row["Frame"])
+            if left_zero_frame and right_zero_frame:
+                break
+        return left_zero_frame, right_zero_frame
+
     def set_start_time(self):
         """ Default start_time is zero """
         self.start_time = rospy.get_param("~start_time", default=0)
         
     def start_listening(self):
+        if self.initialized:
+            return
         #maybe opens file and we have a getline thing going
         if not self.filename:
             rospy.logwarn_throttle(30,"No file is set. I should probably close")
@@ -100,15 +119,9 @@ class InsoleDataFromFile(InsoleDataGetter):
             rospy.logwarn("using EXT sync event from params")
             self.set_start_time_from_sync_event()
         else:
-            rospy.loginfo("Using first frame as sync event")
-            for row in self.data:
-                if row["side"] == "0" and not self.start_frame[0]:
-                    self.start_frame[0] = int(row["Frame"])
-                if row["side"] == "1" and not self.start_frame[1]:
-                    self.start_frame[1] = int(row["Frame"])
-                if self.start_frame[0] and self.start_frame[1]:
-                    break
+            self.start_frame = self.get_initial_frame()
         print(f"start_frame from insoles: {self.start_frame}")
+        self.initialized = True
         self.reader = iter(self.data)
         #print(next(self.reader))
 
@@ -116,14 +129,22 @@ class InsoleDataFromFile(InsoleDataGetter):
     def ok(self):
         #maybe checks if there is still things to be read.
         if self.file:
-            return True
+            now =rospy.Time.now()  
+            desired=rospy.Time.from_sec(self.start_time) 
+            if self.start_time and now > desired:
+                #rospy.logerr("\nnow:"+str(now)+"\n desired:"+str(desired) )
+                return True
+            else:
+                #rospy.logwarn("\nnow:"+str(now)+"\n desired:"+str(desired) )
+                rospy.logwarn_throttle(1,"Waiting for start_time to be bigger than actual time. ")
         else:
             return False
 
     def get_data(self):
         if not self.start_time:
             self.set_start_time()
-        if rospy.Time.now() < rospy.Time.from_sec(self.start_time):
+        if rospy.Time.now() < rospy.Time.from_sec(self.start_time): ## I don't think I want to wait here, i think it makes more sense for the getter to no be ready.
+            rospy.logwarn("Waiting for start_time to be bigger than actual time. ")
             return
 
         frame_msg = next(self.reader)
