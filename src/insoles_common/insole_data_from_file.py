@@ -174,7 +174,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         if msg_time == 0: ## there is a weird incomplete message, I think it is a status message, that crashes the saver. it doesn't show up very often so it is hard to debug. 
             return
         side                = int(get_prop(["side"]))
-        msg_total_force     = 0.1*get_prop(["totalForce"])
+        msg_total_force     = get_prop(["totalForce"])
         msg_cop             = get_prop(["cop1","cop2"])
         msg_ang             = get_prop(["ang1","ang2","ang3"])   
         msg_acc             = get_prop(["acc1","acc2","acc3"]) 
