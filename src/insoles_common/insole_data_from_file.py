@@ -59,9 +59,19 @@ class InsoleDataFromFile(InsoleDataGetter):
             drsecs, drnsecs = diff_time["right"]
             dlsecs, dlnsecs = diff_time["left"]
             lsecs = dlsecs + start_time_s
-            lnsecs = dlnsecs + start_time_ns
+            lnsecs = dlnsecs*1e9 + start_time_ns
+            ##I can also have carries!
+            ##TODO: use decimal: https://stackoverflow.com/questions/11522933/is-floating-point-arbitrary-precision-available
+            if abs(lnsecs) > 1e10:
+                carry = int(lnsecs/1e9)
+                lsecs += carry
+                lnsecs -= carry*1e9
             rsecs = drsecs + start_time_s
-            rnsecs = drnsecs + start_time_ns
+            rnsecs = drnsecs*1e9 + start_time_ns
+            if abs(rnsecs) > 1e10:
+                carry = int(rnsecs/1e9)
+                rsecs += carry
+                rnsecs -= carry*1e9
             lto, rto = self.get_initial_frame()
 
 
@@ -164,7 +174,7 @@ class InsoleDataFromFile(InsoleDataGetter):
         if msg_time == 0: ## there is a weird incomplete message, I think it is a status message, that crashes the saver. it doesn't show up very often so it is hard to debug. 
             return
         side                = int(get_prop(["side"]))
-        msg_total_force     = get_prop(["totalForce"])
+        msg_total_force     = 0.1*get_prop(["totalForce"])
         msg_cop             = get_prop(["cop1","cop2"])
         msg_ang             = get_prop(["ang1","ang2","ang3"])   
         msg_acc             = get_prop(["acc1","acc2","acc3"]) 
