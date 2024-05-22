@@ -87,6 +87,9 @@ class InsoleDataFromFile(InsoleDataGetter):
            
            ## this is a duration
             elapsed_frames_this_side = (start_time_time - this_side_sync_time).to_sec()*1000
+            if not insole_sync_to[i]:
+                rospy.logerr("on side %d i dont have a valid sync value"%i)
+                insole_sync_to[i] = -1 
             self.start_frame[i] = insole_sync_to[i] + int(elapsed_frames_this_side)
 
 
