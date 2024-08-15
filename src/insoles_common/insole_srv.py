@@ -11,6 +11,7 @@ from insole_msgs.msg import InsoleSensorStamped
 from sensor_msgs.msg import Imu
 from copy import deepcopy
 from multiprocessing import Lock
+from datetime import datetime
 
 #import time
 from insoles_common.utils import *
@@ -96,7 +97,7 @@ class InsoleSrv:
         with self.mutex:
             rospy.loginfo("Using directory for savedata: %s"%req.path)
             rospy.loginfo("Using filename for savedata: %s"%req.name)
-            self.savefile_name = req.path + "/" + req.name + "_insole.txt"
+            self.savefile_name = req.path + "/" +datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+ req.name + "_insole.txt"
         return SetFileNameSrvResponse()
 
     def get_timestamp(self, frame_count, side):
@@ -153,16 +154,16 @@ class InsoleSrv:
                     rospy.logwarn("I think I have stopped. last published time: %s"%self.time_stamp)
                     raise(StopIteration)
             return
+        self.time_stamp = self.get_timestamp(msg_time,side)
         with self.mutex:
             if self.recording:
                 try:
-                    self.savedict_list.append(extract_insole_data(msg))
+                    self.savedict_list.append(extract_insole_data(msg, time=rospy.Time.now()))
 
                 except Exception as exc:
                     rospy.logerr("could not create savedict. data for this frame will not be saved.%s"%exc)
 
         h = Header()
-        self.time_stamp = self.get_timestamp(msg_time,side)
         h.stamp = self.time_stamp
         rospy.logwarn_once("start_time that is actually used for header: %s"%self.time_stamp)
 
@@ -175,7 +176,8 @@ class InsoleSrv:
         diags_time.name = "insole_%s"%('right' if side else 'left')
         diags_time.hardware_id = "some_hardware_id_%s"%('r' if side else 'l')
         time_delay_for_frame = self.get_frame_delay(msg_time,side)
-        diags_time.message = f"Frame delay is {time_delay_for_frame}s."
+        #TODO: also publish battery information. Will need to read from those other types of messages we get from insoles
+        diags_time.message = f"\tBat.(XX.XX)\tDelay.({time_delay_for_frame*1000:+8.2f}[ms])"
         if (time_delay_for_frame>1): # this time should be in seconds
             diags_time.level = diags_time.STALE
         else:

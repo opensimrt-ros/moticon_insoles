@@ -39,7 +39,7 @@ def convert_to_imu(h, angular_velocity,linear_acceleration):
 
     return imu_msg
 
-def extract_insole_data(msg_insole):
+def extract_insole_data(msg_insole, time=0):
     """Extract only the pressure and acc info from the large streaming data"""
 
     saving_data = [msg_insole.data_message.time, msg_insole.data_message.side,\
@@ -47,7 +47,7 @@ def extract_insole_data(msg_insole):
             *np.around(msg_insole.data_message.acceleration, decimals=3),\
             *np.around(msg_insole.data_message.angular, decimals=3),\
             msg_insole.data_message.total_force,\
-            *np.around(msg_insole.data_message.cop, decimals=5)]
+            *np.around(msg_insole.data_message.cop, decimals=5),time]
 
     return saving_data
 
@@ -68,7 +68,7 @@ def insole_data_save(file_name, data):
             'P8', 'P9', 'P10', 'P11',\
             'P12', 'P13', 'P14', 'P15',\
             'P16', 'acc1', 'acc2', 'acc3', 'ang1', 'ang2', 'ang3',\
-            'totalForce', 'cop1', 'cop2']
+            'totalForce', 'cop1', 'cop2','ArrivalTime']
 
     try:
         for header_name in header_str:  # write header
