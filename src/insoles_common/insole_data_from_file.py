@@ -107,9 +107,12 @@ class InsoleDataFromFile(InsoleDataGetter):
         return left_zero_frame, right_zero_frame
 
     def set_start_time(self):
-        """ Default start_time is zero """
-        self.start_time = rospy.get_param("~start_time", default=0)
-        
+        """ Default start_time is 1000 000 """
+        self.start_time = rospy.get_param("~start_time", default=1000000)
+        if self.start_time < 100:
+            rospy.logerr("You cannot set this number to be too low or it will break the republisher's ability to correct the header stamps. Value will be set to 100000")
+            self.start_time = 1000000
+
     def start_listening(self):
         if self.initialized:
             return
@@ -144,12 +147,12 @@ class InsoleDataFromFile(InsoleDataGetter):
         if self.file:
             now =rospy.Time.now()  
             desired=rospy.Time.from_sec(self.start_time) 
-            if self.start_time and now > desired:
+            if self.start_time and now < desired:
+                rospy.logwarn("\nnow:"+str(now)+"\n desired:"+str(desired) )
+                rospy.logwarn_throttle(1,"Waiting for start_time to be bigger than actual time. ")
+            else:
                 #rospy.logerr("\nnow:"+str(now)+"\n desired:"+str(desired) )
                 return True
-            else:
-                #rospy.logwarn("\nnow:"+str(now)+"\n desired:"+str(desired) )
-                rospy.logwarn_throttle(1,"Waiting for start_time to be bigger than actual time. ")
         else:
             return False
 

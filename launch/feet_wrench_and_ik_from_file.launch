@@ -3,12 +3,15 @@
 
 	<arg name="name" 		default="openGo" />
 	<arg name="insole_freq" default="100" />
-	<arg name="filename" 		default="/srv/host_data/ruoli/ViconData/Ruoli/Moticon_insole/RealTimekIDS2/walking01_header_corrected.txt"/>
+	<arg name="filename" 		default="/srv/host_data/sample_insole.txt"/>
 	<arg name="estimated_delay"	default="0"/>
 	<arg name="foot_length" 	default="0.2742"/>
 	<arg name="foot_width" 		default="0.0975"/>
 	<arg name="grf_origin_z_offset" default="0.0"/>
-	<arg name="start_time"		default="0.0"/>
+	<!-- YOU CANNOT SET THIS TO ZERO. -->
+	<arg name="start_time"		default="1000.0"/>
+	
+	<arg name="wait_for_trigger"				default="true"/>
 
 	<arg name="use_synchronization_event"				default="false"/>
 	<arg name="rsecs"				default=""/>
@@ -28,7 +31,7 @@
 		<param name="right_cop_reference_frame" 		value="$(arg tf_prefix)right_insole" />
 		<param name="foot_length" 				value="$(arg foot_length)"/>
 		<param name="foot_width" 				value="$(arg foot_width)"/>
-		<param name="wait_for_trigger" 				value="true"/>
+		<param name="wait_for_trigger" 				value="$(arg wait_for_trigger)"/>
 		<param name="estimated_delay"				value="$(arg estimated_delay)"/>
 		<param name="filename" 					value="$(arg filename)"/>
 		<param name="grf_origin_z_offset" 			value="$(arg grf_origin_z_offset)"/>
