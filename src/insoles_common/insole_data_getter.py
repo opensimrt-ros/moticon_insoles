@@ -17,6 +17,9 @@ class InsoleDataGetter(ABC):
     @abstractproperty
     def ok(self):
         pass
+    @abstractproperty
+    def battery_level(self, side):
+        return 100.0
     
     @abstractmethod
     def start_listening(self):

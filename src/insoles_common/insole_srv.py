@@ -142,6 +142,8 @@ class InsoleSrv:
             if len(response) == 8:
                 msg, msg_time, side, msg_press, msg_acc, msg_ang, msg_total_force, msg_cop = response
                 self.started = True
+            elif len(response) == 1:
+                return
             else:
                 ## we are receiving one of those status messages, i think. 
                 ## I should probably do something with this information, however currently I will just log it
@@ -177,7 +179,7 @@ class InsoleSrv:
         diags_time.hardware_id = "some_hardware_id_%s"%('r' if side else 'l')
         time_delay_for_frame = self.get_frame_delay(msg_time,side)
         #TODO: also publish battery information. Will need to read from those other types of messages we get from insoles
-        diags_time.message = f"\tBat.(XX.XX)\tDelay.({time_delay_for_frame*1000:+8.2f}[ms])"
+        diags_time.message = f"\tBat.({self.getter.battery_level(side):3.2f})\tDelay.({time_delay_for_frame*1000:+8.2f}[ms])"
         if (time_delay_for_frame>1): # this time should be in seconds
             diags_time.level = diags_time.STALE
         else:

@@ -12,15 +12,25 @@ class InsoleDataFromSocket(InsoleDataGetter):
     """Sensor reader class"""
     def __init__(self, server_name = "", port = 9999):
         self.connection = None
+        self.server_name = server_name
+        self.port = port
+        self.create_connection()
+        self.insole_startup_data = [SideStartupData(), SideStartupData()]
+        self.insole_battery = [-1,-1]
+        self.device_model = ""
+        ## gotta register the message types with the message_factory
+        #self.message_factory = message_factory()
+
+    def create_connection(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_address = (server_name, port)
-        rospy.loginfo('Starting Moticon Insole server up on {} port {}'.format(server_name, port))
+        server_address = (self.server_name, self.port)
+        rospy.loginfo('Starting Moticon Insole server up on {} port {}'.format(self.server_name, self.port))
         self.sock.bind(server_address)
         self.sock.listen(1)
         self.connection_ok = True
-        self.insole_startup_data = [SideStartupData(), SideStartupData()]
-        ## gotta register the message types with the message_factory
-        #self.message_factory = message_factory()
+
+    def battery_level(self, side):
+        return self.insole_battery[side]
 
     def set_start_time(self):
         """ Default start_time is the time of the first frame actually. I need to make sure this is close, otherwise the calculations for frame time transformations will be incorrect. """
@@ -38,8 +48,14 @@ class InsoleDataFromSocket(InsoleDataGetter):
             rospy.loginfo('Connection created.')
             rospy.logdebug('client connected: {}'.format(client_address))
         else:
-            rospy.logfatal("I need to recreate the socket, maybe with new startup data. I haven't checked if it works yet, do not use")
-            raise(Exception)
+            #rospy.logfatal("I need to recreate the socket, maybe with new startup data. I haven't checked if it works yet, do not use")
+            #raise(Exception)
+            rospy.logwarn("trying to recreate connection")
+            self.create_connection()
+            self.connection, client_address = self.sock.accept()
+            rospy.loginfo('Connection created.')
+            rospy.logdebug('client connected: {}'.format(client_address))
+
 
     def get_data(self):
 
@@ -76,8 +92,8 @@ class InsoleDataFromSocket(InsoleDataGetter):
             msg_time = msg.data_message.time
             if msg_time == 0: ## we want to catch that weird message with Frame = 0
                 ## this is actually a service start message with tons of interesting information that might help synchronize things better!
-                self.parse_startup_message(msg)
-                return ## prevents start_time being set to zero when we have startup messages without timestamps.
+                rospy.logwarn("received message with time == 0")
+                return self.parse_startup_message(msg) ## prevents start_time being set to zero when we have startup messages without timestamps.
             if not self.start_time:
                 self.set_start_time()
             if not self.start_frame[side]:
@@ -90,28 +106,54 @@ class InsoleDataFromSocket(InsoleDataGetter):
             return msg, msg_time, side, msg_pres, msg_acc, msg_ang, msg_total_force, msg_cop 
         ## UNTESTED, from what I understand every moticon message has all of these fields, i wonder if parse from string removes them
         ## if not, then this too will not work
+        elif msg.HasField("insole_status_info"):
+            rospy.logwarn("Incomplete implementation insole_info")
+            return self.parse_insole_status_info(msg)
         elif msg.HasField("insole_info"):
-            rospy.logwarn("NOT_IMPLEMENTED insole_info")
+            rospy.logerr("NOT_IMPLEMENTED insole_info")
+            return [1]
         elif msg.HasField("service_config"):
-            rospy.logwarn("NOT_IMPLEMENTED service_config")
+            rospy.logerr("NOT_IMPLEMENTED service_config")
+            return [1]
         elif msg.HasField("measurement_info"):
-            rospy.logwarn("NOT_IMPLEMENTED measurement_info")
+            rospy.logerr("NOT_IMPLEMENTED measurement_info")
+            return [1] 
         elif msg.HasField("status_info"):
-            rospy.logwarn("NOT_IMPLEMENTED status_info")
+            rospy.logerr("NOT_IMPLEMENTED status_info")
+            return [1]
         elif msg.HasField("start_service_conf"):
-            rospy.logwarn("NOT_IMPLEMENTED start_service_conf")
+            rospy.logerr("NOT_IMPLEMENTED start_service_conf")
+            return [1]
         elif msg.HasField("notification"):
-            rospy.logwarn("NOT_IMPLEMENTED notification")
+            rospy.logerr("NOT_IMPLEMENTED notification")
+            return [1]
+        elif msg.HasField("controlling_device_info"):
+            rospy.logwarn("incomplete implementation controlling_device_info")
+            self.device_model = msg.controlling_device_info.device_model
+            return [0]
 
         else:
+            rospy.loginfo(dir(msg))
             rospy.logerr(f"even stranger than expected message received, please check for this type as well {msg}")
+        rospy.logerr("must have received strange message, will likely fail now.")
         return 
+
+    def parse_insole_status_info(self,msg):
+        rospy.logdebug(dir(msg.insole_status_info.insole_info.insole_status))
+        #rospy.loginfo(msg.data_message.side) #this wont be set in this case
+        #rospy.loginfo(msg.insole_status_info.side)
+        if msg.insole_status_info.side == 1:
+            self.insole_battery[1] = msg.insole_status_info.insole_info.insole_status.battery_level
+        elif msg.insole_status_info.side == 0:
+            self.insole_battery[0] = msg.insole_status_info.insole_info.insole_status.battery_level
+        return [0] 
 
     def parse_startup_message(self, msg):
         if msg.data_message.side == 1:
             self.insole_startup_data[1].store_startup_data(msg)
         elif msg.data_message.side == 0:
             self.insole_startup_data[0].store_startup_data(msg)
+        return [0]
 
     def close(self):
         if self.connection:
