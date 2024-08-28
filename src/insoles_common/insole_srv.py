@@ -237,8 +237,12 @@ class InsoleSrv:
         if msg_press:
             msg_insole_msg.pressure.data = msg_press
         if msg_ang and msg_acc:
-            imsg = convert_to_imu(h, msg_ang, msg_acc)
+            #rospy.logwarn("TRYING TO PUBLISH IMU AS WELL %s"%side)
+            imsg = convert_to_imu(h, msg_ang, msg_acc, side)
             msg_insole_msg.imu = imsg
+        else:
+            rospy.logwarn_once("NOT TRYING TO PUBLISH IMU on side: %s"%side)
+
 
         self.ips.insole[side].publish(msg_insole_msg)
         self.last_time_stamp = deepcopy(self.time_stamp)

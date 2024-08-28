@@ -8,7 +8,8 @@
 	<arg name="ignore_insole_imu_for_vis"	default="true"/>
 	<param name="robot_description" command="$(find xacro)/xacro $(find moticon_insoles)/urdf/robot_insoles.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name)"/>
 
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_test.rviz" />
+	<!-- node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_test.rviz" / -->
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_attempt_at_fixing_imu_oris.rviz" />
 	<!-- 1, 2 represent the opensim model-->
 	<!-- 3 goes to the middle of the foot and is always a fixed transform from a bone in the foot and the center of that foot-->
 	<!-- 4 is representing an IMU and if enabled will be a fixed transform-->

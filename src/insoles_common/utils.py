@@ -3,6 +3,7 @@
 print(f"Loaded {__file__}")
 
 import os
+import rospy
 from pathlib import Path
 
 from sensor_msgs.msg import Imu
@@ -24,17 +25,27 @@ class InsolePublishers():
         self.insole = ["",""]
         self.delay_publisher = [None, None]
 
-def convert_to_imu(h, angular_velocity,linear_acceleration):
+def convert_to_imu(h, angular_velocity,linear_acceleration, side):
     imu_msg = Imu()   
     imu_msg.header = h
     #the sensor for this insole is the LSM6DSL so in g and degrees/second
+
+    #another peculiarity is that the y axis is inverted in the left insole
     if len(angular_velocity) == 3:
         imu_msg.angular_velocity.x = angular_velocity[0]/180.0*pi
-        imu_msg.angular_velocity.y = angular_velocity[1]/180.0*pi
+        if side:
+            imu_msg.angular_velocity.y = angular_velocity[1]/180.0*pi
+        else:
+            imu_msg.angular_velocity.y = - angular_velocity[1]/180.0*pi
         imu_msg.angular_velocity.z = angular_velocity[2]/180.0*pi
     if len(linear_acceleration) == 3:
         imu_msg.linear_acceleration.x = linear_acceleration[0]/GRAVITY
-        imu_msg.linear_acceleration.y = linear_acceleration[1]/GRAVITY
+        if side:
+            #rospy.loginfo("right")
+            imu_msg.linear_acceleration.y = linear_acceleration[1]/GRAVITY
+        else:
+            #rospy.loginfo("left")
+            imu_msg.linear_acceleration.y = - linear_acceleration[1]/GRAVITY
         imu_msg.linear_acceleration.z = linear_acceleration[2]/GRAVITY
 
     return imu_msg

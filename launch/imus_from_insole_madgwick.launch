@@ -1,26 +1,42 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
-	TODO:THESE SETTINGS ARE INCORRECT, FIX THEM
+	<arg name="use_imu_for_insole_orientation" default="true"/>
 	<group ns="left">
 		<node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_gain_node" output="screen">
-			<param name="do_bias_estimation" value="true"/>
-			<param name="do_adaptive_gain" value="true"/>
+			<param name="stateless" value="false"/>
 			<param name="use_mag" value="false"/>
-			<param name="gain_acc" value="0.01"/>
-			<param name="gain_mag" value="0.01"/>
+			<param name="publish_tf" value="$(arg use_imu_for_insole_orientation)"/>
+			<param name="reverse_tf" value="false"/>
+			<param name="fixed_frame" value="left_foot_center"/>
+			
+			<!-- I believe this is 1/freq -->
+			<param name="constant_dt" value="0.01"/>
+			<param name="remove_gravity_vector" value="false"/>
+			<param name="time_jump_threshold" value="0.0"/>
+
+			<!-- options are: enu, ned or nwu -->
+			<param name="world_frame" value="enu"/>
 			<remap from="imu/data_raw" to="imu_raw" />
-			<remap from="imu/data" to="imu" />
+			<remap from="imu/mag" to="imu_mag" />
 		</node>
 	</group>
 	<group ns="right">
 		<node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_gain_node" output="screen">
-			<param name="do_bias_estimation" value="true"/>
-			<param name="do_adaptive_gain" value="true"/>
+			<param name="stateless" value="false"/>
 			<param name="use_mag" value="false"/>
-			<param name="gain_acc" value="0.01"/>
-			<param name="gain_mag" value="0.01"/>
+			<param name="publish_tf" value="$(arg use_imu_for_insole_orientation)"/>
+			<param name="reverse_tf" value="false"/>
+			<param name="fixed_frame" value="right_foot_center"/>
+			
+			<!-- I believe this is 1/freq -->
+			<param name="constant_dt" value="0.01"/>
+			<param name="remove_gravity_vector" value="false"/>
+			<param name="time_jump_threshold" value="0.0"/>
+
+			<!-- options are: enu, ned or nwu -->
+			<param name="world_frame" value="enu"/>
 			<remap from="imu/data_raw" to="imu_raw" />
-			<remap from="imu/data" to="imu" />
+			<remap from="imu/mag" to="imu_mag" />
 		</node>
 	</group>
 

@@ -1,25 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <launch>
+	<arg name="use_imu_for_insole_orientation" default="false"/>
 	<group ns="left">
 		<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node" output="screen">
 			<param name="do_bias_estimation" value="true"/>
+			<param name="reverse_tf" value="true"/>
 			<param name="do_adaptive_gain" value="true"/>
 			<param name="use_mag" value="false"/>
-			<param name="gain_acc" value="0.01"/>
+			<param name="gain_acc" value="0.001"/>
 			<param name="gain_mag" value="0.01"/>
 			<remap from="imu/data_raw" to="imu_raw" />
 			<remap from="imu/data" to="imu" />
+		</node>
+		<node if="$(arg use_imu_for_insole_orientation)" pkg="moticon_insoles" type="place_insole_from_imu_sensor_msgs.py" name="insole_imu_tf_pub" output="screen">
+			<param name="side_of_insole" value="left_insole"/>
 		</node>
 	</group>
 	<group ns="right">
 		<node pkg="imu_complementary_filter" type="complementary_filter_node" name="complementary_filter_gain_node" output="screen">
 			<param name="do_bias_estimation" value="true"/>
+			<param name="reverse_tf" value="true"/>
 			<param name="do_adaptive_gain" value="true"/>
 			<param name="use_mag" value="false"/>
-			<param name="gain_acc" value="0.01"/>
+			<param name="gain_acc" value="0.001"/>
 			<param name="gain_mag" value="0.01"/>
 			<remap from="imu/data_raw" to="imu_raw" />
 			<remap from="imu/data" to="imu" />
+		</node>
+		<node if="$(arg use_imu_for_insole_orientation)" pkg="moticon_insoles" type="place_insole_from_imu_sensor_msgs.py" name="insole_imu_tf_pub" output="screen">
+			<param name="side_of_insole" value="right_insole"/>
 		</node>
 	</group>
 
