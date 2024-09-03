@@ -42,11 +42,11 @@ def convert_to_imu(h, angular_velocity,linear_acceleration, side):
         imu_msg.linear_acceleration.x = linear_acceleration[0]/GRAVITY
         if side:
             #rospy.loginfo("right")
-            imu_msg.linear_acceleration.y = linear_acceleration[1]/GRAVITY
+            imu_msg.linear_acceleration.y = linear_acceleration[1]*GRAVITY
         else:
             #rospy.loginfo("left")
-            imu_msg.linear_acceleration.y = - linear_acceleration[1]/GRAVITY
-        imu_msg.linear_acceleration.z = linear_acceleration[2]/GRAVITY
+            imu_msg.linear_acceleration.y = - linear_acceleration[1]*GRAVITY
+        imu_msg.linear_acceleration.z = linear_acceleration[2]*GRAVITY
 
     return imu_msg
 
