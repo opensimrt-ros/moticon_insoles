@@ -3,7 +3,7 @@ print(f"Loaded {__file__}")
 
 import rospy
 from std_msgs.msg import Header, Float32
-from diagnostic_msgs.msg import DiagnosticStatus, DiagnosticArray
+from diagnostic_msgs.msg import DiagnosticStatus, DiagnosticArray, KeyValue
 from std_srvs.srv import Empty, EmptyResponse
 from opensimrt_msgs.srv import SetFileNameSrv, SetFileNameSrvResponse
 from geometry_msgs.msg import Vector3, Wrench, WrenchStamped, TransformStamped, Transform
@@ -132,6 +132,7 @@ class InsoleSrv:
     def loop_once(self):
         rospy.logdebug("Inner loop listening")
         diag_msg_array = DiagnosticArray()
+        diag_msg_array.header.stamp = rospy.Time.now()
         with self.mutex:
             if self.waiting:
                 rospy.logwarn_once("waiting...")
@@ -174,17 +175,31 @@ class InsoleSrv:
         #
         delay_msg = Float32()
         
-        diags_time = DiagnosticStatus()
-        diags_time.name = "insole_%s"%('right' if side else 'left')
-        diags_time.hardware_id = "some_hardware_id_%s"%('r' if side else 'l')
+        diags = DiagnosticStatus()
+        diags.name = "insole/%s"%('right' if side else 'left')
+        diags.hardware_id = "some_hardware_id_%s"%('r' if side else 'l')
         time_delay_for_frame = self.get_frame_delay(msg_time,side)
         #TODO: also publish battery information. Will need to read from those other types of messages we get from insoles
-        diags_time.message = f"\tBat.({self.getter.battery_level(side):3.2f})\tDelay.({time_delay_for_frame*1000:+8.2f}[ms])"
+        diags.message = f"\tBat.({self.getter.battery_level(side):3.2f})\tDelay.({time_delay_for_frame*1000:+8.2f}[ms])"
+        
+        delay_value = KeyValue()
+        delay_value.key = "Delay"
+        delay_value.value = f"{time_delay_for_frame*1000:+8.2f}[ms]"
         if (time_delay_for_frame>1): # this time should be in seconds
-            diags_time.level = diags_time.STALE
+            diags.level = diags.STALE
         else:
-            diags_time.level = diags_time.OK
-        diag_msg_array.status.append(diags_time)
+            diags.level = diags.OK
+        
+        diags.values.append(delay_value)
+        diags_battery_value = KeyValue()
+        diags_battery_value.key = "Battery"
+        diags_battery_value.value = f"{self.getter.battery_level(side):3.2f}%"
+        diags.values.append(diags_battery_value)
+        
+
+        diag_msg_array.status.append(diags)
+
+        
         delay_msg.data = time_delay_for_frame
         self.ips.delay_publisher[side].publish(delay_msg)
 
