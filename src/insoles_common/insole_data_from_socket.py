@@ -23,6 +23,7 @@ class InsoleDataFromSocket(InsoleDataGetter):
 
     def create_connection(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_address = (self.server_name, self.port)
         rospy.loginfo('Starting Moticon Insole server up on {} port {}'.format(self.server_name, self.port))
         self.sock.bind(server_address)
