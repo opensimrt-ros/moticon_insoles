@@ -16,6 +16,9 @@ from datetime import datetime
 #import time
 from insoles_common.utils import *
 
+MAX_ERROR_COUNT = 1000
+
+
 class InsoleSrv:
     def __init__(self):
         self.recording = False
@@ -60,7 +63,8 @@ class InsoleSrv:
         self.s4 = rospy.Service('~clear', Empty, self.clear)
         self.s5 = rospy.Service('~start_playback', Empty, self.startplayback)
 
-        
+        self.error_count = 0
+
     def set_getter(self, getter):
         self.getter = getter
 
@@ -128,7 +132,42 @@ class InsoleSrv:
                 rospy.loginfo(f"\t{insole_wall_time}") 
 
         return ros_wall_time - insole_wall_time
-    
+   
+
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+
+    def calculate95_percent_delay_of_insoles(self): ## using time_delay_from_frame somehow, there are 2 sides also, so bear in mind that. maybe make this into a separate class to make it easier to track
+        rospy.logerr("STUB, delay calculation not implemented")
+        delay = 0.0 ##
+        return delay
+
+    def create_reconfigure_message(self, delay=0.0):
+        rospy.logerr("STUB, create_reconfigure_message not implemented")
+        reconfigure_msg = None
+        return reconfigure_msg
+
+    def inform_other_nodes_of_delay_via_dynamic_reconfigure_call(self):
+
+        rospy.logerr("STUB, inform_other_nodes_of_delay_via_dynamic_reconfigure_call not implemented")
+        current_delay = self.calculate95_percent_delay_of_insoles()
+        ##maybe filter it idk
+        msg = self.create_reconfigure_message(current_delay)
+
+        ##now send it somehow
+        return
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+    #############################IMPLEMENT!!!!####################################################
+
     def loop_once(self):
         rospy.logdebug("Inner loop listening")
         diag_msg_array = DiagnosticArray()
@@ -149,6 +188,10 @@ class InsoleSrv:
                 ## we are receiving one of those status messages, i think. 
                 ## I should probably do something with this information, however currently I will just log it
                 rospy.logwarn(f"NOT IMPLEMENTED: Received status response from insole, but I don't know what to do with this information\n{response}")
+                if self.error_count > MAX_ERROR_COUNT:
+                    raise(Exception(f"MAX_ERROR_COUNT: {MAX_ERROR_COUNT} exceeded!\nPlease check this node!!!"))
+                self.error_count+=1
+                return ## Even though I got a strange message, I want, if possible to not break the node
         else:
             with self.mutex:
                 if self.started:
