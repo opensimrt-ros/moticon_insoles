@@ -14,22 +14,22 @@
 	<!-- 3 goes to the middle of the foot and is always a fixed transform from a bone in the foot and the center of that foot-->
 	<!-- 4 is representing an IMU and if enabled will be a fixed transform-->
 	<!-- 1 -->
-	<node pkg="tf" type="static_transform_publisher" name="insole_fixed_base_link_broadcaster" args="0 0 $(arg foot_distance_from_ground) 0 0 0 map base 10" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="insole_fixed_base_link_broadcaster" args="0 0 $(arg foot_distance_from_ground) 0 0 0 map base" />
 
 	<group ns="left">
 		<!-- 2 -->
-		<node pkg="tf" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="-0.15 0 0 0 0 0 base $(arg foot_left_name) 10" />
+		<node pkg="tf2_ros" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="-0.15 0 0 0 0 0 base $(arg foot_left_name)" />
 		<!-- 3 -->
-		<node pkg="tf" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_left_name) left_foot_center 10" />
+		<node pkg="tf2_ros" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_left_name) left_foot_center" />
 		<!-- 4 -->
-		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 left_foot_center left_insole 10" />
+		<node pkg="tf2_ros" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 left_foot_center left_insole" />
 	</group>
 	<group ns="right">
 		<!-- this is pretending to be the right leg -->
-		<node pkg="tf" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="0.15 0 0 0 0 0 base $(arg foot_right_name) 10" />
+		<node pkg="tf2_ros" type="static_transform_publisher" name="base_to_skeleton_foot_bone_link_broadcaster" args="0.15 0 0 0 0 0 base $(arg foot_right_name)" />
 		<!-- this is always going to be present and should be a fixed transform from the calcaneus bone to the middle of the foot-->
-		<node pkg="tf" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_right_name) right_foot_center 10" />
-		<node pkg="tf" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 right_foot_center right_insole 10" />
+		<node pkg="tf2_ros" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg foot_right_name) right_foot_center" />
+		<node pkg="tf2_ros" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 right_foot_center right_insole" />
 	</group>
 
 </launch>
