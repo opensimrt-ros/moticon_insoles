@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<launch>
+	<arg name="foot_left_name" default="calcn_l"/>
+	<arg name="foot_right_name" default="calcn_r"/>
+	<arg name="foot_distance_from_ground" default="0.03"/>
+	<arg name="insole_distance_from_foot" default="0.01"/>
+	<arg name="ignore_insole_imu_for_vis"	default="true"/>
+	<arg name="use_gui"	default="false"/>
+	<arg name="base_parent" default="map"/>
+	<arg name="tf_prefix" default="ik"/>
+	<arg name="freq" default="100"/>⏎
+	<group ns="ik">
+		<param name="robot_description" command="$(find xacro)/xacro $(find test_moticon_insoles)/human_with_ximus_movable_and_insole.urdf.xacro left_name:=$(arg foot_left_name) right_name:=$(arg foot_right_name) color:=1.1"/>
+
+		<node name="rviz" pkg="rviz" type="rviz" args="-d $(find moticon_insoles)/insole_test.rviz" />
+		<!-- 1, 2 represent the opensim model-->
+		<!-- 3 goes to the middle of the foot and is always a fixed transform from a bone in the foot and the center of that foot-->
+		<!-- 4 is representing an IMU and if enabled will be a fixed transform-->
+		<!-- 1 -->
+		<include if="$(arg use_gui)" file="$(find gait1992_description)/launch/gui.launch"/>
+		<include if="$(arg use_gui)" file="$(find gait1992_description)/launch/pelvis_map_pose_fake_tf_publisher.launch"/>
+		<node name="human_state_publisher" pkg="human_state_publisher" type="human_state_publisher" respawn="false" output="screen">
+			<param name="tf_prefix" value="$(arg tf_prefix)"/>
+
+			<param name="ignore_timestamp" value="true"/>
+			<remap from="/joint_states" to="/model_generic/joint_states" />
+		</node>
+		<!-- include file="$(find gait1992_description)/launch/human_state_pub.launch"/ -->
+		<include file="$(find osrt_ros)/launch/custom_filtered.launch">
+			<remap from="/joint_states" to="model_generic/joint_states"/>
+			<!-- arg name="base_parent" value="subject_adds_heading"/ -->
+			<arg name="base_parent" value="$(arg base_parent)"/>
+			<arg name="in_labels" value="/ik/out_labels"/>
+		</include>
+		<group unless="$(arg use_gui)" >
+			<node pkg="tf2_ros" type="static_transform_publisher" name="subtalar_r" args=" 0.00792000 -0.04877000 -0.04195000 0 0 0 $(arg tf_prefix)/talus_r $(arg tf_prefix)/calcn_r " />
+
+			<node pkg="tf2_ros" type="static_transform_publisher" name="mtp_r" args=" 0.00108000  0.17880000 -0.00200000 0 0 0 $(arg tf_prefix)/calcn_r $(arg tf_prefix)/toes_r " />
+
+			<node pkg="tf2_ros" type="static_transform_publisher" name="subtalar_l" args="-0.00792000 -0.04877000 -0.04195000 0 0 0 $(arg tf_prefix)/talus_l $(arg tf_prefix)/calcn_l " />
+
+			<node pkg="tf2_ros" type="static_transform_publisher" name="mtp_l" args="-0.00108000  0.17880000 -0.00200000 0 0 0 $(arg tf_prefix)/calcn_l $(arg tf_prefix)/toes_l " />
+
+		</group>
+	<group ns="left">
+		<!-- 3 -->
+		<node pkg="tf2_ros" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg tf_prefix)/$(arg foot_left_name) $(arg tf_prefix)/left_foot_center" />
+		<!-- 4 -->
+		<node pkg="tf2_ros" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 $(arg tf_prefix)/left_foot_center $(arg tf_prefix)/left_insole" />
+	</group>
+	<group ns="right">
+		<!-- this is always going to be present and should be a fixed transform from the calcaneus bone to the middle of the foot-->
+		<node pkg="tf2_ros" type="static_transform_publisher" name="skeleton_foot_to_center_of_foot_broadcaster" args="0 .10 0 0 0 0 $(arg tf_prefix)/$(arg foot_right_name) $(arg tf_prefix)/right_foot_center" />
+		<node pkg="tf2_ros" if="$(arg ignore_insole_imu_for_vis)" type="static_transform_publisher" name="insole_fixed_insole_link_broadcaster" args="0 0 -$(arg insole_distance_from_foot) 0 0 0 1 $(arg tf_prefix)/right_foot_center $(arg tf_prefix)/right_insole" />
+	</group>
+
+
+	</group>
+	<node pkg="tf2_ros" type="static_transform_publisher" name="imu_default_orientation_publisher" args="0.5 0.3 0 -0.70711 0.0 0.0 0.70711 map imu_default_frame" />
+	<!-- node pkg="tf" type="static_transform_publisher" name="t2_subject_heading1" args="1 0.6 0  0 0.70711 0.70711 0 map opensim_default_frame $(arg freq)" / -->
+	<!--node pkg="tf" type="static_transform_publisher" name="opensim_frame_publisher" args="0.5 -0.3 0  0.5 0.5 0.5 0.5 map opensim_default_frame $(arg freq)" / -->
+
+	<!--include file="$(find osrt_ros)/launch/opensim_tf.launch"/ -->
+
+
+</launch>
