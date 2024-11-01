@@ -16,7 +16,7 @@
 		</joint>
 
 	</xacro:macro>
-	<xacro:macro name="insole_link" params="insole_name stl_name">
+	<xacro:macro name="insole_link" params="insole_name stl_name global_scale">
 		<link name="${insole_name}" >
 			<inertial>
 
@@ -39,7 +39,9 @@
 					rpy="0 0 0" />
 				<geometry>
 					<mesh
-						filename="package://moticon_insoles/meshes/${stl_name}" />
+						filename="package://moticon_insoles/meshes/${stl_name}" 
+						scale = "${global_scale} ${global_scale} ${global_scale}"
+						/>
 				</geometry>
 				<material name="">
 					<color	rgba="0.92 0.2 0.2 1" />
@@ -51,24 +53,29 @@
 					rpy="0 0 0" />
 				<geometry>
 					<mesh
-						filename="package://moticon_insoles/meshes/${stl_name}" />
+						filename="package://moticon_insoles/meshes/${stl_name}"
+						scale = "${global_scale} ${global_scale} ${global_scale}"
+						/>
 				</geometry>
 			</collision>
 		</link>
 	</xacro:macro>
-	<xacro:macro name="insole_joint" params="insole_name parent origin jtype">
+	<xacro:macro name="insole_joint" params="insole_name parent origin jtype global_scale">
 		<joint name="${insole_name}_joint" type="${jtype}">
 			<origin xyz="${origin}" rpy="0 0 0"/>
 			<parent link="${parent}"/>
 			<child link="${insole_name}"/>
 		</joint>
 	</xacro:macro>
-	<xacro:macro name="insole_link_and_joint" params="parent origin side stl_name jtype">
-		<xacro:insole_link insole_name="${side}_insole" stl_name="${stl_name}"/>
+	<xacro:macro name="insole_link_and_joint" params="parent origin side stl_name jtype insole_scale_factor">
+		<xacro:insole_link insole_name="${side}_insole" stl_name="${stl_name}"
+			global_scale="${insole_scale_factor}"
+			/>
 		<xacro:insole_joint 
 			insole_name="${side}_insole" 
 			parent="${parent}" 
 			origin="${origin}"
+			global_scale="${insole_scale_factor}"
 			jtype="${jtype}"/>
 	</xacro:macro>
 </robot>
