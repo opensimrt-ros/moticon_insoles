@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<launch>
+
+	<arg name="name" 		default="openGo" />
+	<arg name="insole_freq" default="100" />
+	<arg name="static_pub_freq" default="25" />
+
+	<arg name="use_imus"		default="true"/>
+	<arg name="tf_prefix" default=""/>
+	<arg name="foot_length" 	default="0.2742"/>
+	<arg name="foot_width" 		default="0.0975"/>
+	<arg name="grf_origin_z_offset" default="0.0"/>
+        <node pkg="moticon_insoles" type="from_nothing.py" 	name="moticon_insoles" output="screen">
+		<param name="name" 		value="$(arg name)" />
+		<param name="insole_rate" 		value="$(arg insole_freq)" />
+		<param name="foot_length" 				value="$(arg foot_length)"/>
+		<param name="foot_width" 				value="$(arg foot_width)"/>
+		<param name="left_cop_reference_frame" 			value="$(arg tf_prefix)left_insole" />
+		<param name="right_cop_reference_frame" 		value="$(arg tf_prefix)right_insole" />
+		<param name="grf_origin_z_offset" 			value="$(arg grf_origin_z_offset)"/>
+        </node>
+	
+	<!-- The settings for the madgwick imu are not properly set. it already publishes a tf (maybe the imus from insole also does,,, fix!-->
+	<include file="$(find moticon_insoles)/launch/imus_from_insole_madgwick.launch"/>
+	
+	<!-- include if="$(arg use_imus)" file="$(find moticon_insoles)/launch/imus_from_insole.launch"/ -->
+<!--node pkg="tf" type="static_transform_publisher" name="left_foot_static_broadcaster" args="-0.3 0 0 0 0.707 0.707 0 map left $(arg static_pub_freq)" /-->
+<!--node pkg="tf" type="static_transform_publisher" name="right_foot_static_broadcaster" args="0.3 0 0 0 0.707 0.707 0 map right $(arg static_pub_freq)" /-->
+
+<!-- left_foot right_foot  -->
+
+
+
+</launch>
+
+
