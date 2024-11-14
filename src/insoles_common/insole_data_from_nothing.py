@@ -26,7 +26,7 @@ class InsoleDataFromNothing(InsoleDataGetter):
         return 100
 
     def set_start_time(self):
-        self.start_time = 100000
+        self.start_time = rospy.Time.now().to_sec()
 
     def start_listening(self):
         if self.initialized:
